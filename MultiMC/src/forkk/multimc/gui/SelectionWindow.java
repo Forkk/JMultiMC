@@ -486,7 +486,8 @@ public class SelectionWindow implements ActionListener,
 		//							Notes
 		else if (event.getSource() == mntmNotes)
 		{
-			// TODO Notes
+			EditNotesDialog end = new EditNotesDialog(instListView.getSelectedValue());
+			end.setVisible(true);
 		}
 		
 		//							View Folder
