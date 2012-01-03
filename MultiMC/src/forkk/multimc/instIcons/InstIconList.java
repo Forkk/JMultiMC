@@ -18,15 +18,15 @@ package forkk.multimc.instIcons;
 
 import java.net.URL;
 import java.util.HashMap;
+import java.util.Set;
 
 import javax.swing.Icon;
 import javax.swing.ImageIcon;
 
-public class InstIconList extends HashMap<String, Icon>
+public class InstIconList
 {
-	private static final long serialVersionUID = -3023113349114910001L;
-	
 	private static InstIconList list;
+	
 	
 	public static InstIconList getList()
 	{
@@ -38,10 +38,10 @@ public class InstIconList extends HashMap<String, Icon>
 	/**
 	 * The resource path for default icons
 	 */
-	private static final String DefaultIconResourcePath = "/forkk/multimc/instIcons/";
+	//private static final String DefaultIconResourcePath = "/forkk/multimc/instIcons/";
 	
 	private static final Icon DefaultIcon = new ImageIcon(
-			InstIconList.class.getResource(DefaultIconResourcePath + "stone.png"));
+			InstIconList.class.getResource("grass.png"));
 	
 	/**
 	 * The keys for all of the default icons
@@ -50,8 +50,11 @@ public class InstIconList extends HashMap<String, Icon>
 			"diamond", "dirt", "gold", "grass", "iron", "planks", "stone",
 			"tnt", };
 	
+	private HashMap<String, Icon> iconMap;
+	
 	private InstIconList()
 	{
+		iconMap = new HashMap<String, Icon>();
 		loadDefaultIcons();
 	}
 	
@@ -63,9 +66,9 @@ public class InstIconList extends HashMap<String, Icon>
 	 * @param iconFile
 	 *            The file to bind to the key
 	 */
-	public void addIcon(String iconKey, URL iconFile)
+	public void addIcon(String iconKey, ImageIcon icon)
 	{
-		put(iconKey, new ImageIcon(iconFile));
+		iconMap.put(iconKey, icon);
 	}
 	
 	/**
@@ -75,18 +78,26 @@ public class InstIconList extends HashMap<String, Icon>
 	{
 		for (String key : DefIconKeys)
 		{
-			URL url = InstIconList.class.getResource(DefaultIconResourcePath
-					+ key + ".png");
-//			System.out.println("Loading default icon: " + url);
-			addIcon(key, url);
+			URL url = InstIconList.class.getResource(key + ".png");
+			System.out.println("Loading default icon: " + url + " to key " + key);
+			addIcon(key, new ImageIcon(url));
 		}
 	}
 	
 	public Icon get(String key)
 	{
-		if (key == null || !containsKey(key))
+		if (key == null || !iconMap.containsKey(key) || iconMap.get(key) == null)
+		{
 			return DefaultIcon;
+		}
 		else
-			return super.get("key");
+		{
+			return iconMap.get(key);
+		}
+	}
+	
+	public Set<String> keySet()
+	{
+		return iconMap.keySet();
 	}
 }

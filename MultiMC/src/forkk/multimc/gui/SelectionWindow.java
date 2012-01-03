@@ -480,7 +480,8 @@ public class SelectionWindow implements ActionListener,
 		//							Change icon
 		else if (event.getSource() == mntmChangeIcon)
 		{
-			// TODO Change icon
+			ChangeIconDialog chd = new ChangeIconDialog(instListView.getSelectedValue());
+			chd.setVisible(true);
 		}
 		
 		//							Notes
