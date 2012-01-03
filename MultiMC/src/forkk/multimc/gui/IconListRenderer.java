@@ -26,7 +26,7 @@ import javax.swing.ListCellRenderer;
 import forkk.multimc.data.Instance;
 import forkk.multimc.instIcons.InstIconList;
 
-public class InstanceListRenderer implements ListCellRenderer<Instance>
+public class IconListRenderer implements ListCellRenderer<Instance>
 {
 	protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
 	

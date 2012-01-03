@@ -202,7 +202,7 @@ public class SelectionWindow implements ActionListener,
 		instListView.setLayoutOrientation(JList.HORIZONTAL_WRAP);
 		instListView.setVisibleRowCount(0);
 		instListView.setModel(instList);
-		instListView.setCellRenderer(new InstanceListRenderer());
+		instListView.setCellRenderer(new IconListRenderer());
 		instListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
 //		instListView.addMouseListener(new MouseAdapter()
 //		{
