@@ -42,8 +42,11 @@ import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JList;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
+import javax.swing.JPopupMenu;
 import javax.swing.JProgressBar;
+import javax.swing.JSeparator;
 import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
@@ -183,7 +186,13 @@ public class SelectionWindow implements ActionListener,
 			@Override
 			public void mousePressed(MouseEvent e)
 			{
-				if (e.getClickCount() >= 2)
+				if (e.getButton() == MouseEvent.BUTTON3)
+				{
+					instListView.setSelectedIndex(instListView.locationToIndex(e.getPoint()));
+					instPopupMenu.show(instListView, e.getPoint().x, e.getPoint().y);
+				}
+				
+				if (e.getClickCount() >= 2 && e.getButton() == MouseEvent.BUTTON1)
 				{
 					actionPerformed(new ActionEvent(instListView,
 							ActionEvent.ACTION_PERFORMED, "launch"));
@@ -200,6 +209,51 @@ public class SelectionWindow implements ActionListener,
 //		});
 		mainFrame.getContentPane().add(instListView, BorderLayout.CENTER);
 		
+		instPopupMenu = new JPopupMenu();
+		instPopupMenu.setLabel("");
+		//addPopup(instListView, instPopupMenu);
+		
+		mntmLaunch = new JMenuItem("Launch");
+		mntmLaunch.addActionListener(this);
+		instPopupMenu.add(mntmLaunch);
+		
+		separator = new JSeparator();
+		instPopupMenu.add(separator);
+		
+		mntmRename = new JMenuItem("Rename");
+		mntmRename.addActionListener(this);
+		instPopupMenu.add(mntmRename);
+		
+		mntmChangeIcon = new JMenuItem("Change Icon");
+		mntmChangeIcon.addActionListener(this);
+		instPopupMenu.add(mntmChangeIcon);
+		
+		mntmNotes = new JMenuItem("Notes");
+		mntmNotes.addActionListener(this);
+		instPopupMenu.add(mntmNotes);
+		
+		mntmViewFolder = new JMenuItem("View Folder");
+		mntmViewFolder.addActionListener(this);
+		instPopupMenu.add(mntmViewFolder);
+		
+		separator_1 = new JSeparator();
+		instPopupMenu.add(separator_1);
+		
+		mntmEditMods = new JMenuItem("Edit Mods");
+		mntmEditMods.addActionListener(this);
+		instPopupMenu.add(mntmEditMods);
+		
+		mntmRebuildMinecraftjar = new JMenuItem("Rebuild minecraft.jar");
+		mntmRebuildMinecraftjar.addActionListener(this);
+		instPopupMenu.add(mntmRebuildMinecraftjar);
+		
+		separator_2 = new JSeparator();
+		instPopupMenu.add(separator_2);
+		
+		mntmDeleteInstance = new JMenuItem("Delete Instance");
+		mntmDeleteInstance.addActionListener(this);
+		instPopupMenu.add(mntmDeleteInstance);
+		
 		toolBar = new JToolBar();
 		toolBar.setFloatable(false);
 		mainFrame.getContentPane().add(toolBar, BorderLayout.NORTH);
@@ -211,6 +265,7 @@ public class SelectionWindow implements ActionListener,
 		btnNewInst.addActionListener(this);
 		
 		btnViewFolder = new JButton("");
+		btnViewFolder.setEnabled(false);
 		toolBar.add(btnViewFolder);
 		btnViewFolder.setToolTipText("View Folder");
 		btnViewFolder.setIcon(new ImageIcon(SelectionWindow.class.getResource("/forkk/multimc/icons/ViewFolderIcon.png")));
@@ -225,6 +280,7 @@ public class SelectionWindow implements ActionListener,
 		toolBar.add(new JToolBar.Separator());
 		
 		btnSettings = new JButton("");
+		btnSettings.setEnabled(false);
 		btnSettings.setIcon(new ImageIcon(SelectionWindow.class.getResource("/forkk/multimc/icons/SettingsIcon.png")));
 		btnSettings.setToolTipText("Settings");
 		toolBar.add(btnSettings);
@@ -239,11 +295,13 @@ public class SelectionWindow implements ActionListener,
 		toolBar.add(Box.createHorizontalGlue());
 		
 		btnHelp = new JButton("Help");
+		btnHelp.setEnabled(false);
 		btnHelp.setIcon(new ImageIcon(SelectionWindow.class.getResource("/forkk/multimc/icons/HelpIcon.png")));
 		toolBar.add(btnHelp);
 		btnHelp.addActionListener(this);
 		
 		btnAbout = new JButton("About");
+		btnAbout.setEnabled(false);
 		btnAbout.setIcon(new ImageIcon(SelectionWindow.class.getResource("/forkk/multimc/icons/AboutIcon.png")));
 		toolBar.add(btnAbout);
 		btnAbout.addActionListener(this);
@@ -338,7 +396,7 @@ public class SelectionWindow implements ActionListener,
 	public void actionPerformed(ActionEvent event)
 	{
 		//							Launch
-		if (event.getSource() == instListView)
+		if (event.getSource() == instListView || event.getSource() == mntmLaunch)
 		{
 			System.out.println("Launching " + instListView.getSelectedValue().getName());
 			instListView.getSelectedValue().Launch();
@@ -410,6 +468,70 @@ public class SelectionWindow implements ActionListener,
 		{
 			// TODO About button
 		}
+		
+		
+		////////////////////////// INSTANCE RIGHT CLICK MENU //////////////////
+		//							Rename
+		else if (event.getSource() == mntmRename)
+		{
+			// TODO Rename
+		}
+		
+		//							Change icon
+		else if (event.getSource() == mntmChangeIcon)
+		{
+			// TODO Change icon
+		}
+		
+		//							Notes
+		else if (event.getSource() == mntmNotes)
+		{
+			// TODO Notes
+		}
+		
+		//							View Folder
+		else if (event.getSource() == mntmViewFolder)
+		{
+			if (Desktop.isDesktopSupported())
+			{
+				try
+				{
+					Desktop.getDesktop().open(instListView.getSelectedValue().getRootDir());
+				} catch (IOException e)
+				{
+					e.printStackTrace();
+				}
+			}
+		}
+		
+		//							Edit Mods
+		else if (event.getSource() == mntmEditMods)
+		{
+			// TODO Edit Mods
+		}
+		
+		//							Rebuild Jar
+		else if (event.getSource() == mntmRebuildMinecraftjar)
+		{
+			// TODO Rebuild Jar
+		}
+		
+		//							Delete
+		else if (event.getSource() == mntmDeleteInstance)
+		{
+			String reply = JOptionPane.showInputDialog(null, "Type DELETE in " +
+					"all caps to delete this instance. THIS CANNOT BE UNDONE!",
+					"Are you sure?", JOptionPane.QUESTION_MESSAGE);
+			
+			if (reply != null && reply.equals("DELETE"))
+			{
+				Instance inst = instListView.getSelectedValue();
+				System.out.println("Deleting instance " + inst.getName());
+				instList.removeElement(inst);
+				inst.getRootDir().delete();
+				loadInstances();
+			}
+		}
 	}
 	
 	InstanceListModel instList;
@@ -425,6 +547,18 @@ public class SelectionWindow implements ActionListener,
 	private JLabel lblTaskStatus;
 	private JProgressBar taskProgressBar;
 	private JList<Instance> instListView;
+	private JPopupMenu instPopupMenu;
+	private JMenuItem mntmRename;
+	private JSeparator separator;
+	private JMenuItem mntmChangeIcon;
+	private JMenuItem mntmNotes;
+	private JSeparator separator_1;
+	private JMenuItem mntmEditMods;
+	private JMenuItem mntmRebuildMinecraftjar;
+	private JMenuItem mntmViewFolder;
+	private JSeparator separator_2;
+	private JMenuItem mntmDeleteInstance;
+	private JMenuItem mntmLaunch;
 
 	@Override
 	public void taskProgressChange(BackgroundTask t, int p)

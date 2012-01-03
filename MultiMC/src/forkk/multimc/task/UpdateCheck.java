@@ -44,7 +44,6 @@ public class UpdateCheck extends BackgroundTask
 			e.printStackTrace();
 			OnErrorMessage("Failed to check for updates:\n" + e.getMessage());
 		}
-		System.out.println(newVersionStr);
 		Version newVersion = Version.parseString(newVersionStr);
 		if (newVersion != null)
 		{
