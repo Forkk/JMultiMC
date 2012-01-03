@@ -25,6 +25,7 @@ public class StringSetting implements Setting<String>
 	
 	public StringSetting(SettingsFile settings, String id, String defValue)
 	{
+		settings.addSetting(this);
 		this.defValue = defValue;
 		this.settings = settings;
 		this.id = id;
@@ -32,6 +33,7 @@ public class StringSetting implements Setting<String>
 	
 	public StringSetting(SettingsFile settings, String id)
 	{
+		settings.addSetting(this);
 		this.settings = settings;
 		this.id = id;
 	}

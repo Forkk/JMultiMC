@@ -25,6 +25,7 @@ public class IntSetting implements Setting<Integer>
 	
 	public IntSetting(SettingsFile settings, String id, int defValue)
 	{
+		settings.addSetting(this);
 		this.defValue = defValue;
 		this.settings = settings;
 		this.id = id;
@@ -32,6 +33,7 @@ public class IntSetting implements Setting<Integer>
 	
 	public IntSetting(SettingsFile settings, String id)
 	{
+		settings.addSetting(this);
 		this.settings = settings;
 		this.id = id;
 	}

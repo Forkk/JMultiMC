@@ -25,6 +25,7 @@ public class BoolSetting implements Setting<Boolean>
 	
 	public BoolSetting(SettingsFile settings, String id, Boolean defValue)
 	{
+		settings.addSetting(this);
 		this.defValue = defValue;
 		this.settings = settings;
 		this.id = id;
@@ -32,6 +33,7 @@ public class BoolSetting implements Setting<Boolean>
 	
 	public BoolSetting(SettingsFile settings, String id)
 	{
+		settings.addSetting(this);
 		this.settings = settings;
 		this.id = id;
 	}
