@@ -17,19 +17,26 @@
 package forkk.multimc.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Desktop;
 import java.awt.EventQueue;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.security.InvalidParameterException;
 
+import javax.swing.Box;
 import javax.swing.ImageIcon;
 import javax.swing.JButton;
 import javax.swing.JFrame;
@@ -51,8 +58,12 @@ import forkk.multimc.data.InstanceListModel;
 import forkk.multimc.data.Version;
 import forkk.multimc.data.exceptions.InstanceLoadException;
 import forkk.multimc.data.exceptions.InstanceSaveException;
+import forkk.multimc.task.BackgroundTask;
+import forkk.multimc.task.UpdateCheck;
 
-public class SelectionWindow implements ActionListener
+public class SelectionWindow implements ActionListener,
+		BackgroundTask.ProgressChangeListener, BackgroundTask.StatusChangeListener,
+		BackgroundTask.TaskListener, BackgroundTask.ErrorMessageListener
 {
 	public static final Version currentVersion = new Version(2, 0, 0);
 	
@@ -60,6 +71,11 @@ public class SelectionWindow implements ActionListener
 	
 	private static SettingsFile settings;
 	private static final String settingsFileName = "multimc.cfg";
+	
+	/**
+	 * The web page that is opened for manual updates.
+	 */
+	private static String updatePage = "http://www.tinyurl.com/multiplemc";
 	
 	/**
 	 * @return MultiMC's main settings file
@@ -146,6 +162,17 @@ public class SelectionWindow implements ActionListener
 		
 		// Initialize GUI
 		mainFrame = new JFrame();
+		mainFrame.addWindowListener(new WindowAdapter()
+		{
+			@Override
+			public void windowOpened(WindowEvent e)
+			{
+				if (((BoolSetting) getSettings().getSetting("AutoCheckUpdates")).get())
+				{
+					checkUpdates();
+				}
+			}
+		});
 		mainFrame.setTitle(MainWindowTitle);
 		mainFrame.setBounds(100, 100, 620, 400);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -209,7 +236,7 @@ public class SelectionWindow implements ActionListener
 		toolBar.add(btnCheckForUpdates);
 		btnCheckForUpdates.addActionListener(this);
 		
-		toolBar.add(new JToolBar.Separator());
+		toolBar.add(Box.createHorizontalGlue());
 		
 		btnHelp = new JButton("Help");
 		btnHelp.setIcon(new ImageIcon(SelectionWindow.class.getResource("/forkk/multimc/icons/HelpIcon.png")));
@@ -225,13 +252,15 @@ public class SelectionWindow implements ActionListener
 		statusBar.setFloatable(false);
 		mainFrame.getContentPane().add(statusBar, BorderLayout.SOUTH);
 		
-		lblTaskStatus = new JLabel("Task status...");
-		statusBar.add(lblTaskStatus);
-		
 		taskProgressBar = new JProgressBar();
+		taskProgressBar.setVisible(false);
 		taskProgressBar.setStringPainted(true);
 		taskProgressBar.setValue(50);
 		statusBar.add(taskProgressBar);
+		
+		lblTaskStatus = new JLabel("Task status...");
+		lblTaskStatus.setVisible(false);
+		statusBar.add(lblTaskStatus);
 		
 		mainFrame.setTitle(MainWindowTitle + " " + currentVersion);
 		
@@ -239,6 +268,37 @@ public class SelectionWindow implements ActionListener
 	}
 	
 	private static final Path InstanceDirectory = FileSystems.getDefault().getPath("instances");
+	
+	private BackgroundTask currentTask;
+	
+	public void startTask(BackgroundTask task)
+	{
+		if (isTaskRunning())
+			throw new InvalidParameterException("MultiMC can't multitask! " +
+					"(Background task can't start because one is already running)");
+		
+		this.currentTask = task;
+		currentTask.AddErrorListener(this);
+		currentTask.AddProgressListener(this);
+		currentTask.AddStatusListener(this);
+		currentTask.AddTaskListener(this);
+		currentTask.start();
+	}
+	
+	/**
+	 * Checks for updates
+	 */
+	private void checkUpdates()
+	{
+		if (!isTaskRunning())
+			
+		startTask(new UpdateCheck());
+	}
+	
+	public boolean isTaskRunning()
+	{
+		return (currentTask != null && currentTask.isRunning());
+	}
 	
 	/**
 	 * Loads instances from the instance directory
@@ -336,7 +396,7 @@ public class SelectionWindow implements ActionListener
 		//							Update
 		else if (event.getSource() == btnCheckForUpdates)
 		{
-			// TODO Update button
+			checkUpdates();
 		}
 		
 		//							Help
@@ -365,4 +425,64 @@ public class SelectionWindow implements ActionListener
 	private JLabel lblTaskStatus;
 	private JProgressBar taskProgressBar;
 	private JList<Instance> instListView;
+
+	@Override
+	public void taskProgressChange(BackgroundTask t, int p)
+	{
+		taskProgressBar.setValue(p);
+	}
+
+	@Override
+	public void taskStart(BackgroundTask t)
+	{
+		lblTaskStatus.setVisible(true);
+		taskProgressBar.setIndeterminate(t.isProgressIndeterminate());
+		taskProgressBar.setStringPainted(!t.isProgressIndeterminate());
+		taskProgressBar.setVisible(true);
+	}
+
+	@Override
+	public void taskEnd(BackgroundTask t)
+	{
+		lblTaskStatus.setVisible(false);
+		taskProgressBar.setVisible(false);
+		
+		if (t instanceof UpdateCheck)
+		{
+			boolean updateAvailable = ((UpdateCheck) t).isUpdateAvailable();
+			if (updateAvailable)
+			{
+				int result = JOptionPane.showConfirmDialog(null, "A new update " +
+						"is available. Would you like to download it?", "Update", 
+						JOptionPane.YES_NO_OPTION);
+				
+				if (result == JOptionPane.YES_OPTION && Desktop.isDesktopSupported())
+				{
+					try
+					{
+						Desktop.getDesktop().browse(new URI(updatePage));
+					} catch (IOException e)
+					{
+						e.printStackTrace();
+					} catch (URISyntaxException e)
+					{
+						e.printStackTrace();
+					}
+				}
+			}
+		}
+	}
+
+	@Override
+	public void taskStatusChange(BackgroundTask t, String status)
+	{
+		lblTaskStatus.setText(status);
+	}
+
+	@Override
+	public void taskErrorMessage(BackgroundTask t, String message)
+	{
+		JOptionPane.showMessageDialog(null, message, "Error", 
+				JOptionPane.ERROR_MESSAGE);
+	}
 }

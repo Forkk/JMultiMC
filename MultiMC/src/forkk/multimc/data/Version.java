@@ -36,4 +36,33 @@ public class Version
 	{
 		return String.format("%1$s.%2$s.%3$s", major, minor, revision);
 	}
+	
+	public int compareTo(Version other)
+	{
+		if (major != other.major)
+			return (int) Math.copySign(1, major - other.major);
+		else if (minor != other.minor)
+			return (int) Math.copySign(1, minor - other.minor);
+		else if (revision != other.revision)
+			return (int) Math.copySign(1, revision - other.revision);
+		else
+			return 0;
+	}
+	
+	public static Version parseString(String str)
+	{
+		try
+		{
+			int major = Integer.parseInt(str.substring(0, str.indexOf('.')));
+			str = str.substring(str.indexOf('.') + 1);
+			int minor = Integer.parseInt(str.substring(0, str.indexOf('.')));
+			str = str.substring(str.indexOf('.') + 1);
+			int revision = Integer.parseInt(str);
+			return new Version(major, minor, revision);
+		} catch (Exception e)
+		{
+			e.printStackTrace();
+			return null;
+		}
+	}
 }

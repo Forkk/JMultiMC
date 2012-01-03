@@ -22,6 +22,8 @@ public abstract class BackgroundTask extends Thread
 {
 	public void run()
 	{
+		OnProgressChange(0);
+		OnStatusChange("");
 		TaskStart();
 	}
 	
@@ -30,13 +32,19 @@ public abstract class BackgroundTask extends Thread
 	 */
 	public abstract void TaskStart();
 	
+	/**
+	 * @return false if the progress bar should show progress. Default is true
+	 */
+	public boolean isProgressIndeterminate() { return true; }
+	
 	// Events
-	public interface TaskListener
+	public static interface TaskListener
 	{
 		public abstract void taskStart(BackgroundTask t);
 		public abstract void taskEnd(BackgroundTask t);
 	}
-	private ArrayList<TaskListener> taskListeners;
+	private ArrayList<TaskListener> taskListeners = 
+			new ArrayList<BackgroundTask.TaskListener>();
 	public void AddTaskListener(TaskListener l) { taskListeners.add(l); }
 	public void RemoveTaskListener(TaskListener l) { taskListeners.add(l); }
 	protected void OnTaskStart()
@@ -56,11 +64,12 @@ public abstract class BackgroundTask extends Thread
 		}
 	}
 	
-	public interface ProgressChangeListener
+	public static interface ProgressChangeListener
 	{
 		public abstract void taskProgressChange(BackgroundTask t, int p);
 	}
-	private ArrayList<ProgressChangeListener> progressListeners;
+	private ArrayList<ProgressChangeListener> progressListeners = 
+			new ArrayList<BackgroundTask.ProgressChangeListener>();
 	public void AddProgressListener(ProgressChangeListener l) { progressListeners.add(l); }
 	public void RemoveProgressListener(ProgressChangeListener l) { progressListeners.remove(l); }
 	protected void OnProgressChange(int p)
@@ -71,11 +80,12 @@ public abstract class BackgroundTask extends Thread
 		}
 	}
 	
-	public interface StatusChangeListener
+	public static interface StatusChangeListener
 	{
 		public abstract void taskStatusChange(BackgroundTask t, String status);
 	}
-	private ArrayList<StatusChangeListener> statusListeners;
+	private ArrayList<StatusChangeListener> statusListeners = 
+			new ArrayList<BackgroundTask.StatusChangeListener>();
 	public void AddStatusListener(StatusChangeListener l) { statusListeners.add(l); }
 	public void RemoveStatusListener(StatusChangeListener l) { statusListeners.remove(l); }
 	protected void OnStatusChange(String newStatus)
@@ -88,16 +98,17 @@ public abstract class BackgroundTask extends Thread
 	
 	public interface ErrorMessageListener
 	{
-		public abstract void taskStatusChange(BackgroundTask t, String status);
+		public abstract void taskErrorMessage(BackgroundTask t, String status);
 	}
-	private ArrayList<ErrorMessageListener> errorListeners;
+	private ArrayList<ErrorMessageListener> errorListeners = 
+			new ArrayList<BackgroundTask.ErrorMessageListener>();
 	public void AddErrorListener(ErrorMessageListener l) { errorListeners.add(l); }
 	public void RemoveErrorListener(ErrorMessageListener l) { errorListeners.remove(l); }
 	protected void OnErrorMessage(String errorMessage)
 	{
 		for (ErrorMessageListener l : errorListeners)
 		{
-			l.taskStatusChange(this, errorMessage);
+			l.taskErrorMessage(this, errorMessage);
 		}
 	}
 	
