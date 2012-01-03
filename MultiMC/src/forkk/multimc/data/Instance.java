@@ -146,8 +146,6 @@ public class Instance
 	public void Launch(boolean symlinkLaunch)
 	{
 		this.symlinkLaunch = symlinkLaunch;
-		if (SelectionWindow.getSettings().getSetting("JavaPath") == null)
-			System.out.println("Setting is null");
 		
 		ProcessBuilder mcProcBuild = new ProcessBuilder(
 				System.getProperty("java.home") + "/bin/java",
