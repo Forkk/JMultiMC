@@ -4,6 +4,8 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
@@ -24,6 +26,7 @@ public class ChangeIconDialog extends JDialog
 	Instance instance;
 	private JList<String> iconListView;
 	DefaultListModel<String> iconList;
+	private JButton okButton;
 	
 	/**
 	 * Create the dialog.
@@ -38,6 +41,15 @@ public class ChangeIconDialog extends JDialog
 		contentPanel.setLayout(new BorderLayout(0, 0));
 		{
 			iconListView = new JList<String>();
+			iconListView.addMouseListener(new MouseAdapter()
+			{
+				@Override
+				public void mouseClicked(MouseEvent e)
+				{
+					if (e.getClickCount() >= 2)
+						okButton.doClick();
+				}
+			});
 			iconListView.setVisibleRowCount(0);
 			iconListView.setLayoutOrientation(JList.HORIZONTAL_WRAP);
 			iconListView.setCellRenderer(new IconListRenderer());
@@ -54,7 +66,7 @@ public class ChangeIconDialog extends JDialog
 			buttonPane.setLayout(new FlowLayout(FlowLayout.RIGHT));
 			getContentPane().add(buttonPane, BorderLayout.SOUTH);
 			{
-				JButton okButton = new JButton("OK");
+				okButton = new JButton("OK");
 				okButton.addActionListener(new ActionListener()
 				{
 					public void actionPerformed(ActionEvent e)
