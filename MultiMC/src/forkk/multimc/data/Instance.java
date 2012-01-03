@@ -150,7 +150,7 @@ public class Instance
 			System.out.println("Setting is null");
 		
 		ProcessBuilder mcProcBuild = new ProcessBuilder(
-				SelectionWindow.getSettings().getSetting("JavaPath").toString(), 
+				System.getProperty("java.home"),
 				"-jar", 
 				"-Xms" + SelectionWindow.getSettings().getSetting("InitialMemAlloc").toString() + "m",
 				"-Xmx" + SelectionWindow.getSettings().getSetting("MaxMemAlloc").toString() + "m",

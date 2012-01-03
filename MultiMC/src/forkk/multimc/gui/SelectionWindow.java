@@ -85,7 +85,6 @@ public class SelectionWindow implements ActionListener
 		settings = new SettingsFile(new File(settingsFileName));
 		
 		// Instance launch settings
-		settings.addSetting(new StringSetting(settings, "JavaPath", "java"));
 		settings.addSetting(new StringSetting(settings, "LauncherFile", "launcher.jar"));
 		settings.addSetting(new IntSetting(settings, "InitialMemAlloc", 512));
 		settings.addSetting(new IntSetting(settings, "MaxMemAlloc", 1024));
