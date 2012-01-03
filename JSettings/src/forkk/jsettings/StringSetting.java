@@ -16,6 +16,8 @@
 
 package forkk.jsettings;
 
+import forkk.jsettings.errors.SettingNotFoundException;
+
 
 public class StringSetting implements Setting<String>
 {
@@ -25,7 +27,6 @@ public class StringSetting implements Setting<String>
 	
 	public StringSetting(SettingsFile settings, String id, String defValue)
 	{
-		settings.addSetting(this);
 		this.defValue = defValue;
 		this.settings = settings;
 		this.id = id;
@@ -33,7 +34,6 @@ public class StringSetting implements Setting<String>
 	
 	public StringSetting(SettingsFile settings, String id)
 	{
-		settings.addSetting(this);
 		this.settings = settings;
 		this.id = id;
 	}
@@ -41,12 +41,19 @@ public class StringSetting implements Setting<String>
 	@Override
 	public void set(String val)
 	{
+		if (!this.settings.hasSetting(id))
+			throw new SettingNotFoundException("Setting must be added to a file " +
+					"before it can be used!");
 		this.settings.getXmlNode(id, null, defValue).setTextContent(val);
+		settings.AutoSave();
 	}
 	
 	@Override
 	public String get()
 	{
+		if (!this.settings.hasSetting(id))
+			throw new SettingNotFoundException("Setting must be added to a file " +
+					"before it can be used!");
 		return this.settings.getXmlNode(id, null, defValue).getTextContent();
 	}
 	
@@ -59,6 +66,6 @@ public class StringSetting implements Setting<String>
 	@Override
 	public String toString()
 	{
-		return get();
+		return get().toString();
 	}
 }

@@ -77,7 +77,7 @@ public class InstIconList extends HashMap<String, Icon>
 		{
 			URL url = InstIconList.class.getResource(DefaultIconResourcePath
 					+ key + ".png");
-			System.out.println("Loading default icon: " + url);
+//			System.out.println("Loading default icon: " + url);
 			addIcon(key, url);
 		}
 	}

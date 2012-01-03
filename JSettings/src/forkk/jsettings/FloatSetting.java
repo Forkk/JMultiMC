@@ -25,7 +25,6 @@ public class FloatSetting implements Setting<Float>
 	
 	public FloatSetting(SettingsFile settings, String id, Float defValue)
 	{
-		settings.addSetting(this);
 		this.defValue = defValue;
 		this.settings = settings;
 		this.id = id;
@@ -33,7 +32,6 @@ public class FloatSetting implements Setting<Float>
 	
 	public FloatSetting(SettingsFile settings, String id)
 	{
-		settings.addSetting(this);
 		this.settings = settings;
 		this.id = id;
 	}
@@ -42,6 +40,7 @@ public class FloatSetting implements Setting<Float>
 	public void set(Float val)
 	{
 		this.settings.getXmlNode(id, null, defValue.toString()).setTextContent(val.toString());
+		settings.AutoSave();
 	}
 	
 	@Override

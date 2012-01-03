@@ -135,6 +135,8 @@ public class Instance
 	 */
 	Process instProc;
 	
+	boolean symlinkLaunch;
+	
 	// Process stuff
 	public void Launch()
 	{
@@ -143,11 +145,15 @@ public class Instance
 	
 	public void Launch(boolean symlinkLaunch)
 	{
+		this.symlinkLaunch = symlinkLaunch;
+		if (SelectionWindow.getSettings().getSetting("JavaPath") == null)
+			System.out.println("Setting is null");
+		
 		ProcessBuilder mcProcBuild = new ProcessBuilder(
 				SelectionWindow.getSettings().getSetting("JavaPath").toString(), 
 				"-jar", 
-				"-Xms", SelectionWindow.getSettings().getSetting("InitialMemAlloc").toString(),
-				"-Xmx", SelectionWindow.getSettings().getSetting("MaxMemAlloc").toString(),
+				"-Xms" + SelectionWindow.getSettings().getSetting("InitialMemAlloc").toString() + "m",
+				"-Xmx" + SelectionWindow.getSettings().getSetting("MaxMemAlloc").toString() + "m",
 				SelectionWindow.getSettings().getSetting("LauncherFile").toString());
 		
 		switch (OSUtils.getCurrentOS())
@@ -169,42 +175,40 @@ public class Instance
 		
 		try
 		{
+			//mcProcBuild.inheritIO();
+			System.out.println("Starting process...");
 			instProc = mcProcBuild.start();
-			if (symlinkLaunch)
+			
+			new Thread(new Runnable()
 			{
-				new Thread(new Runnable()
+				@Override
+				public void run()
 				{
-					@Override
-					public void run()
+					Scanner scan = new Scanner(instProc.getInputStream());
+					while (isRunning() || scan.hasNextLine())
 					{
-						try
-						{
-							instProc.waitFor();
-							SymlinkLaunchEnd();
-						} catch (InterruptedException e) { }
+						if (scan.hasNextLine())
+							System.out.println("Instance: " + scan.nextLine());
+						try { Thread.sleep(250); } catch (InterruptedException e) { }
 					}
-				}).start();
-				
-				new Thread(new Runnable()
-				{
-					@Override
-					public void run()
-					{
-						Scanner scan = new Scanner((Readable) instProc.getOutputStream());
-						while (isRunning())
-						{
-							if (scan.hasNextLine())
-								System.out.println("Instance: " + scan.nextLine());
-							try { Thread.sleep(250); } catch (InterruptedException e) { }
-						}
-					}
-				}).start();
-			}
+					onProcExit();
+				}
+			}).start();
 		} catch (IOException e)
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
+	}
+	
+	/**
+	 * Called when Minecraft closes
+	 */
+	public void onProcExit()
+	{
+		System.out.println("Process quit.");
+		if (symlinkLaunch)
+			SymlinkLaunchEnd();
 	}
 	
 	public boolean isRunning()

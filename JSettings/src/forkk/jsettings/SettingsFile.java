@@ -38,6 +38,7 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import forkk.jsettings.errors.SettingNotFoundException;
 import forkk.jsettings.errors.SettingsLoadException;
 import forkk.jsettings.errors.SettingsSaveException;
 
@@ -79,7 +80,12 @@ public class SettingsFile
 			e.printStackTrace();
 			throw new SettingsLoadException("Unknown IO exception when " +
 					"loading instance. " + e.getMessage());
-		}
+		} 
+//		catch (SettingsSaveException e)
+//		{
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	}
 	
 	/**
@@ -88,32 +94,34 @@ public class SettingsFile
 	 */
 	public Setting<?> getSetting(String id)
 	{
+		if (!hasSetting(id))
+			throw new SettingNotFoundException("There is no setting with ID: " + id);
 		return this.settingsMap.get(id);
 	}
 	
 	/**
 	 * Adds the given setting to the file. If there is already a setting with
-	 * the setting's ID, it will be overwritten. This method is called from
-	 * within the constructors of the setting types
+	 * the setting's ID, it will be overwritten.
 	 * @param setting the new setting
 	 */
-	protected void settingAdded(Setting<?> setting)
+	public void addSetting(Setting<?> setting)
 	{
+		System.out.println("Adding setting: " + setting.getID());
 		this.settingsMap.put(setting.getID(), setting);
 	}
 	
 	/**
-	 * Registers the given setting with this settings file. This method should be 
-	 * automatically called by setting types
-	 * @param newSetting
+	 * @param id the id to check
+	 * @return true if there is a setting with the given id
 	 */
-	protected void addSetting(Setting<?> newSetting)
+	public boolean hasSetting(String id)
 	{
-		
+		return settingsMap.containsKey(id);
 	}
 	
 	protected void AutoSave()
 	{
+		System.out.println("Autosaving...");
 		if (autosave)
 		{
 			try
@@ -133,6 +141,7 @@ public class SettingsFile
 	 */
 	public void Save() throws SettingsSaveException
 	{
+		System.out.println("Saving settings...");
 		try
 		{
 			Transformer transformer = TransformerFactory.newInstance().newTransformer();
@@ -225,14 +234,17 @@ public class SettingsFile
 		NodeList nodes = parent.getElementsByTagName(element);
 		if (nodes.getLength() <= 0)
 		{
+			Node result;
 			if (defValue == null)
-				return parent.appendChild(xmlDoc.createElement(element));
+				result = parent.appendChild(xmlDoc.createElement(element));
 			else
 			{
 				Element newElement = xmlDoc.createElement(element);
 				newElement.setTextContent(defValue);
-				return parent.appendChild(newElement);
+				result = parent.appendChild(newElement);
 			}
+			AutoSave();
+			return result;
 		}
 		else
 		{

@@ -58,6 +58,9 @@ public class SelectionWindow implements ActionListener
 	
 	private static String MainWindowTitle = "MultiMC";
 	
+	private static SettingsFile settings;
+	private static final String settingsFileName = "multimc.cfg";
+	
 	/**
 	 * @return MultiMC's main settings file
 	 */
@@ -82,23 +85,21 @@ public class SelectionWindow implements ActionListener
 		settings = new SettingsFile(new File(settingsFileName));
 		
 		// Instance launch settings
-		new StringSetting(settings, "JavaPath", "java");
-		new StringSetting(settings, "LauncherFile", "launcher.jar");
-		new IntSetting(settings, "InitialMemAlloc", 512);
-		new IntSetting(settings, "MaxMemAlloc", 1024);
+		settings.addSetting(new StringSetting(settings, "JavaPath", "java"));
+		settings.addSetting(new StringSetting(settings, "LauncherFile", "launcher.jar"));
+		settings.addSetting(new IntSetting(settings, "InitialMemAlloc", 512));
+		settings.addSetting(new IntSetting(settings, "MaxMemAlloc", 1024));
 		
 		// Instance console settings
-		new BoolSetting(settings, "ShowConsole", false);
-		new BoolSetting(settings, "AutoCloseConsole", false);
+		settings.addSetting(new BoolSetting(settings, "ShowConsole", false));
+		settings.addSetting(new BoolSetting(settings, "AutoCloseConsole", false));
 		
 		// Other settings
-		new BoolSetting(settings, "AutoCheckUpdates", true);
+		settings.addSetting(new BoolSetting(settings, "AutoCheckUpdates", true));
 		
 		return settings;
 	}
 	
-	private static SettingsFile settings;
-	private static final String settingsFileName = "multimc.cfg";
 	
 	private JFrame mainFrame;
 	
@@ -154,7 +155,7 @@ public class SelectionWindow implements ActionListener
 		instListView.addMouseListener(new MouseAdapter()
 		{
 			@Override
-			public void mouseClicked(MouseEvent e)
+			public void mousePressed(MouseEvent e)
 			{
 				if (e.getClickCount() >= 2)
 				{
@@ -277,10 +278,11 @@ public class SelectionWindow implements ActionListener
 	@Override
 	public void actionPerformed(ActionEvent event)
 	{
-		//													Launch
+		//							Launch
 		if (event.getSource() == instListView)
 		{
 			System.out.println("Launching " + instListView.getSelectedValue().getName());
+			instListView.getSelectedValue().Launch();
 		}
 		
 		
