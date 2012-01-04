@@ -16,32 +16,40 @@ import javax.swing.JSpinner;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.LayoutStyle.ComponentPlacement;
+import javax.swing.SpinnerNumberModel;
 import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
+import forkk.jsettings.BoolSetting;
 import forkk.jsettings.IntSetting;
+import forkk.jsettings.StringSetting;
 
 public class SettingsDialog extends JDialog
 {
 	private static final long serialVersionUID = -7764610862804154562L;
 	
 	private final JPanel contentPanel = new JPanel();
-	private JTextField textField;
 	private JPanel advancedTab;
 	private JPanel generalTab;
 	private JSpinner initialMemorySpinner;
 	private JSpinner maxMemorySpinner;
+	private JCheckBox chckbxShowConsole;
+	private JCheckBox chckbxAutoCloseConsole;
+	private JCheckBox chckbxAutoUpdate;
+	private JTextField launcherFileTextField;
 	
 	/**
 	 * Launch the application.
 	 */
 	public static void main(String[] args)
 	{
-		try {
+		try
+		{
 			UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-		} catch (Throwable e) {
+		} catch (Throwable e)
+		{
 			e.printStackTrace();
 		}
 		try
@@ -74,14 +82,52 @@ public class SettingsDialog extends JDialog
 				tabbedPane.setEnabledAt(0, true);
 				
 				JLabel lblLauncherFilename = new JLabel("Launcher Filename:");
-				textField = new JTextField();
-				textField.setColumns(10);
+				launcherFileTextField = new JTextField(((StringSetting) SelectionWindow.getSettings().getSetting("LauncherFile")).get());
+				launcherFileTextField.setColumns(10);
+				launcherFileTextField.addActionListener(new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						((StringSetting) SelectionWindow.getSettings().getSetting("LauncherFile")).set(launcherFileTextField.getText());
+					}
+				});
 				
 				JLabel lblConsoleSettings = new JLabel("Console Settings:");
 				
-				JCheckBox chckbxShowConsole = new JCheckBox("Show console");
-				JCheckBox chckbxCloseConsoleWhen = new JCheckBox("Close console when instance exits.");
-				JCheckBox chckbxAutomaticallyCheckFor = new JCheckBox("Automatically check for updates when MultiMC starts");
+				chckbxShowConsole = new JCheckBox("Show console");
+				chckbxShowConsole.getModel().setSelected(((BoolSetting) SelectionWindow.getSettings().getSetting("ShowConsole")).get());
+				chckbxShowConsole.getModel().addActionListener(new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						((BoolSetting) SelectionWindow.getSettings().getSetting("ShowConsole")).set(chckbxShowConsole.getModel().isSelected());
+					}
+				});
+				
+				chckbxAutoCloseConsole = new JCheckBox("Close console when instance exits.");
+				chckbxShowConsole.getModel().setSelected(((BoolSetting) SelectionWindow.getSettings().getSetting("AutoCloseConsole")).get());
+				chckbxAutoCloseConsole.getModel().addActionListener(new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						((BoolSetting) SelectionWindow.getSettings().getSetting("AutoCloseConsole")).set(chckbxAutoCloseConsole.getModel().isSelected());
+					}
+				});
+				
+				chckbxAutoUpdate = new JCheckBox("Automatically check for updates when MultiMC starts");
+				chckbxShowConsole.getModel().setSelected(((BoolSetting) SelectionWindow.getSettings().getSetting("AutoCheckUpdates")).get());
+				chckbxAutoUpdate.getModel().addActionListener(new ActionListener()
+				{
+					@Override
+					public void actionPerformed(ActionEvent e)
+					{
+						((BoolSetting) SelectionWindow.getSettings().getSetting("AutoCheckUpdates")).set(chckbxAutoUpdate.getModel().isSelected());
+					}
+				});
+				
 				GroupLayout gl_generalTab = new GroupLayout(generalTab);
 				gl_generalTab.setHorizontalGroup(
 					gl_generalTab.createParallelGroup(Alignment.LEADING)
@@ -91,13 +137,13 @@ public class SettingsDialog extends JDialog
 								.addGroup(gl_generalTab.createSequentialGroup()
 									.addComponent(lblLauncherFilename)
 									.addPreferredGap(ComponentPlacement.RELATED)
-									.addComponent(textField, GroupLayout.DEFAULT_SIZE, 262, Short.MAX_VALUE))
+									.addComponent(launcherFileTextField, GroupLayout.DEFAULT_SIZE, 262, Short.MAX_VALUE))
 								.addGroup(gl_generalTab.createSequentialGroup()
 									.addGap(6)
 									.addGroup(gl_generalTab.createParallelGroup(Alignment.LEADING)
-										.addComponent(chckbxCloseConsoleWhen)
+										.addComponent(chckbxAutoCloseConsole)
 										.addComponent(chckbxShowConsole)))
-								.addComponent(chckbxAutomaticallyCheckFor)
+								.addComponent(chckbxAutoUpdate)
 								.addComponent(lblConsoleSettings))
 							.addContainerGap())
 				);
@@ -107,15 +153,15 @@ public class SettingsDialog extends JDialog
 							.addContainerGap()
 							.addGroup(gl_generalTab.createParallelGroup(Alignment.BASELINE)
 								.addComponent(lblLauncherFilename)
-								.addComponent(textField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+								.addComponent(launcherFileTextField, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
 							.addGap(18)
 							.addComponent(lblConsoleSettings)
 							.addPreferredGap(ComponentPlacement.RELATED)
 							.addComponent(chckbxShowConsole)
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addComponent(chckbxCloseConsoleWhen)
+							.addComponent(chckbxAutoCloseConsole)
 							.addGap(18)
-							.addComponent(chckbxAutomaticallyCheckFor)
+							.addComponent(chckbxAutoUpdate)
 							.addContainerGap(198, Short.MAX_VALUE))
 				);
 				generalTab.setLayout(gl_generalTab);
@@ -125,9 +171,11 @@ public class SettingsDialog extends JDialog
 				tabbedPane.addTab("Advanced", null, advancedTab, "Advanced settings such as memory allocations.");
 				
 				initialMemorySpinner = new JSpinner();
-				initialMemorySpinner.addChangeListener(new ChangeListener()
+				initialMemorySpinner.setModel(new SpinnerNumberModel(new Integer(512), new Integer(512), null, new Integer(512)));
+				initialMemorySpinner.getModel().addChangeListener(new ChangeListener()
 				{
-					public void stateChanged(ChangeEvent e)
+					@Override
+					public void stateChanged(ChangeEvent arg0)
 					{
 						((IntSetting) SelectionWindow.getSettings().getSetting("InitialMemAlloc")).set((Integer) initialMemorySpinner.getValue());
 					}
@@ -136,8 +184,10 @@ public class SettingsDialog extends JDialog
 				JLabel lblInitialMemoryAllocation = new JLabel("Initial Memory Allocation (MB): ");
 				
 				maxMemorySpinner = new JSpinner();
-				maxMemorySpinner.addChangeListener(new ChangeListener()
+				maxMemorySpinner.setModel(new SpinnerNumberModel(new Integer(1024), new Integer(1024), null, new Integer(512)));
+				maxMemorySpinner.getModel().addChangeListener(new ChangeListener()
 				{
+					@Override
 					public void stateChanged(ChangeEvent e)
 					{
 						((IntSetting) SelectionWindow.getSettings().getSetting("MaxMemAlloc")).set((Integer) maxMemorySpinner.getValue());
@@ -154,9 +204,9 @@ public class SettingsDialog extends JDialog
 								.addComponent(labelMaxMemAlloc)
 								.addComponent(lblInitialMemoryAllocation))
 							.addPreferredGap(ComponentPlacement.RELATED)
-							.addGroup(gl_advancedTab.createParallelGroup(Alignment.LEADING)
-								.addComponent(initialMemorySpinner, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE)
-								.addComponent(maxMemorySpinner, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
+							.addGroup(gl_advancedTab.createParallelGroup(Alignment.LEADING, false)
+								.addComponent(maxMemorySpinner)
+								.addComponent(initialMemorySpinner))
 							.addGap(144))
 				);
 				gl_advancedTab.setVerticalGroup(
@@ -170,7 +220,7 @@ public class SettingsDialog extends JDialog
 							.addGroup(gl_advancedTab.createParallelGroup(Alignment.BASELINE)
 								.addComponent(labelMaxMemAlloc)
 								.addComponent(maxMemorySpinner, GroupLayout.PREFERRED_SIZE, GroupLayout.DEFAULT_SIZE, GroupLayout.PREFERRED_SIZE))
-							.addContainerGap(288, Short.MAX_VALUE))
+							.addContainerGap(276, Short.MAX_VALUE))
 				);
 				advancedTab.setLayout(gl_advancedTab);
 			}

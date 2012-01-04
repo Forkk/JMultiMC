@@ -324,7 +324,6 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		btnNewInst.addActionListener(this);
 		
 		btnViewFolder = new JButton("");
-		btnViewFolder.setEnabled(false);
 		toolBar.add(btnViewFolder);
 		btnViewFolder.setToolTipText("View Folder");
 		btnViewFolder.setIcon(new ImageIcon(SelectionWindow.class.getResource("/forkk/multimc/icons/ViewFolderIcon.png")));
@@ -339,7 +338,6 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		toolBar.add(new JToolBar.Separator());
 		
 		btnSettings = new JButton("");
-		btnSettings.setEnabled(false);
 		btnSettings.setIcon(new ImageIcon(SelectionWindow.class.getResource("/forkk/multimc/icons/SettingsIcon.png")));
 		btnSettings.setToolTipText("Settings");
 		toolBar.add(btnSettings);
@@ -354,6 +352,7 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		toolBar.add(Box.createHorizontalGlue());
 		
 		btnHelp = new JButton("Help");
+		btnHelp.setEnabled(false);
 		btnHelp.setIcon(new ImageIcon(SelectionWindow.class.getResource("/forkk/multimc/icons/HelpIcon.png")));
 		toolBar.add(btnHelp);
 		btnHelp.addActionListener(this);
@@ -460,15 +459,12 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 			{
 				int reply = JOptionPane.showConfirmDialog(null, 
 						"Updates have been downloaded and are ready to " +
-						"install.\nWould you like to install them now?\n" +
-						"(Clicking no will install them when MultiMC " +
-						"closes)", "Install Update?", 
-						JOptionPane.YES_NO_CANCEL_OPTION);
+						"install.\nWould you like to install them?", 
+						"Install Update?", 
+						JOptionPane.YES_NO_OPTION);
 				
 				if (reply == JOptionPane.YES_OPTION)
 					installUpdate(true);
-				else if (reply == JOptionPane.NO_OPTION)
-					installUpdate(false);
 			}
 		});
 		startTask(updateDownloader);
@@ -569,12 +565,15 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		//							View folder
 		else if (event.getSource() == btnViewFolder)
 		{
-			try
+			if (Desktop.isDesktopSupported())
 			{
-				new ProcessBuilder(InstanceDirectory.toAbsolutePath().toString()).start();
-			} catch (IOException e)
-			{
-				e.printStackTrace();
+				try
+				{
+					Desktop.getDesktop().open(InstanceDirectory.toFile());
+				} catch (IOException e)
+				{
+					e.printStackTrace();
+				}
 			}
 		}
 		
@@ -587,7 +586,8 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		//							Settings
 		else if (event.getSource() == btnSettings)
 		{
-			// TODO Settings button
+			SettingsDialog sdlg = new SettingsDialog();
+			sdlg.setVisible(true);
 		}
 		
 		//							Update

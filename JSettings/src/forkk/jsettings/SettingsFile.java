@@ -106,7 +106,7 @@ public class SettingsFile
 	 */
 	public void addSetting(Setting<?> setting)
 	{
-		System.out.println("Adding setting: " + setting.getID());
+//		System.out.println("Adding setting: " + setting.getID());
 		this.settingsMap.put(setting.getID(), setting);
 	}
 	
@@ -121,7 +121,6 @@ public class SettingsFile
 	
 	protected void AutoSave()
 	{
-		System.out.println("Autosaving...");
 		if (autosave)
 		{
 			try
@@ -141,7 +140,7 @@ public class SettingsFile
 	 */
 	public void Save() throws SettingsSaveException
 	{
-		System.out.println("Saving settings...");
+//		System.out.println("Saving settings...");
 		try
 		{
 			Transformer transformer = TransformerFactory.newInstance().newTransformer();
