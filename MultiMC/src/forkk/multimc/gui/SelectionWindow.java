@@ -415,7 +415,7 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 	{
 		if (!isTaskRunning())
 		{
-			UpdateCheck checkTask = new UpdateCheck(UpdateCheck.VF_DEBUG);
+			UpdateCheck checkTask = new UpdateCheck(UpdateCheck.VF_STANDARD);
 			checkTask.AddTaskListener(new TaskAdapter()
 			{
 				@Override
