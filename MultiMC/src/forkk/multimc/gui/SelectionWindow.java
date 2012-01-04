@@ -27,8 +27,6 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.nio.file.DirectoryStream;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
@@ -62,14 +60,13 @@ import forkk.multimc.data.Version;
 import forkk.multimc.data.exceptions.InstanceLoadException;
 import forkk.multimc.data.exceptions.InstanceSaveException;
 import forkk.multimc.task.BackgroundTask;
+import forkk.multimc.task.Downloader;
+import forkk.multimc.task.TaskAdapter;
 import forkk.multimc.task.UpdateCheck;
+import forkk.multimc.update.UpdateFile;
 
-public class SelectionWindow implements ActionListener,
-		BackgroundTask.ProgressChangeListener, BackgroundTask.StatusChangeListener,
-		BackgroundTask.TaskListener, BackgroundTask.ErrorMessageListener
+public class SelectionWindow implements ActionListener, BackgroundTask.TaskListener
 {
-	public static final Version currentVersion = new Version(2, 0, 0);
-	
 	private static String MainWindowTitle = "MultiMC";
 	
 	private static SettingsFile settings;
@@ -78,7 +75,98 @@ public class SelectionWindow implements ActionListener,
 	/**
 	 * The web page that is opened for manual updates.
 	 */
+	@SuppressWarnings("unused")
 	private static String updatePage = "http://www.tinyurl.com/multiplemc";
+	
+	private static boolean updateOnExit = false;
+	
+	private static boolean restartAfterUpdate = false;
+	
+	private JFrame mainFrame;
+	
+	public static final File latestUpdateTemp = new File("LatestVersion.jar");
+	
+	/**
+	 * Launch the application.
+	 */
+	public static void main(String[] args)
+	{
+		try {
+			UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+		} catch (Throwable e) {
+			e.printStackTrace();
+		}
+		EventQueue.invokeLater(new Runnable()
+		{
+			public void run()
+			{
+				if (latestUpdateTemp.exists())
+					latestUpdateTemp.delete();
+				
+				try
+				{
+					SelectionWindow window = new SelectionWindow();
+					window.mainFrame.setVisible(true);
+					window.mainFrame.addWindowListener(new WindowAdapter()
+					{
+						@Override
+						public void windowClosing(WindowEvent ev)
+						{
+							if (updateOnExit && latestUpdateTemp.exists())
+							{
+								System.out.println("Updating");
+								String options = "";
+								if (restartAfterUpdate)
+									options += "r";
+								try
+								{
+									ProcessBuilder updateProcBuilder = 
+											new ProcessBuilder("java", "-cp", 
+											latestUpdateTemp.getPath(),
+											"forkk.multimc.update.UpdateFile",
+											UpdateFile.getCurrentFilePath().toString(),
+											options);
+									System.out.println(UpdateFile.getCurrentFilePath().toString());
+									updateProcBuilder.inheritIO();
+									updateProcBuilder.start();
+									System.exit(0);
+								} catch (IOException e)
+								{
+									e.printStackTrace();
+									JOptionPane.showMessageDialog(null, 
+											"Couldn't launch updater: " + 
+											e.toString(), "Updater Launch Failed", 
+											JOptionPane.ERROR_MESSAGE);
+								}
+								
+//								latestUpdateTemp.renameTo(
+//										UpdateFile.getCurrentFilePath().toFile());
+//								
+//								if (restartAfterUpdate)
+//								{
+//									ProcessBuilder restartProcBuilder = new ProcessBuilder(
+//											"java",
+//											"-jar",
+//											UpdateFile.getCurrentFilePath().toString());
+//									try
+//									{
+//										restartProcBuilder.start();
+//									} catch (IOException e)
+//									{
+//										e.printStackTrace();
+//									}
+//								}
+							}
+							System.exit(0);
+						}
+					});
+				} catch (Exception e)
+				{
+					e.printStackTrace();
+				}
+			}
+		});
+	}
 	
 	/**
 	 * @return MultiMC's main settings file
@@ -116,35 +204,6 @@ public class SelectionWindow implements ActionListener,
 		settings.addSetting(new BoolSetting(settings, "AutoCheckUpdates", true));
 		
 		return settings;
-	}
-	
-	
-	private JFrame mainFrame;
-	
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args)
-	{
-		try {
-			UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-		} catch (Throwable e) {
-			e.printStackTrace();
-		}
-		EventQueue.invokeLater(new Runnable()
-		{
-			public void run()
-			{
-				try
-				{
-					SelectionWindow window = new SelectionWindow();
-					window.mainFrame.setVisible(true);
-				} catch (Exception e)
-				{
-					e.printStackTrace();
-				}
-			}
-		});
 	}
 	
 	/**
@@ -295,7 +354,6 @@ public class SelectionWindow implements ActionListener,
 		toolBar.add(Box.createHorizontalGlue());
 		
 		btnHelp = new JButton("Help");
-		btnHelp.setEnabled(false);
 		btnHelp.setIcon(new ImageIcon(SelectionWindow.class.getResource("/forkk/multimc/icons/HelpIcon.png")));
 		toolBar.add(btnHelp);
 		btnHelp.addActionListener(this);
@@ -313,14 +371,13 @@ public class SelectionWindow implements ActionListener,
 		taskProgressBar = new JProgressBar();
 		taskProgressBar.setVisible(false);
 		taskProgressBar.setStringPainted(true);
-		taskProgressBar.setValue(50);
 		statusBar.add(taskProgressBar);
 		
 		lblTaskStatus = new JLabel("Task status...");
 		lblTaskStatus.setVisible(false);
 		statusBar.add(lblTaskStatus);
 		
-		mainFrame.setTitle(MainWindowTitle + " " + currentVersion);
+		mainFrame.setTitle(MainWindowTitle + " " + Version.currentVersion);
 		
 		loadInstances();
 	}
@@ -334,13 +391,21 @@ public class SelectionWindow implements ActionListener,
 		if (isTaskRunning())
 			throw new InvalidParameterException("MultiMC can't multitask! " +
 					"(Background task can't start because one is already running)");
-		
-		this.currentTask = task;
-		currentTask.AddErrorListener(this);
-		currentTask.AddProgressListener(this);
-		currentTask.AddStatusListener(this);
-		currentTask.AddTaskListener(this);
-		currentTask.start();
+		else
+		{
+			// Detach from the current task
+			if (currentTask != null)
+			{
+				currentTask.RemoveTaskListener(this);
+			}
+			
+			// Attach the new one
+			currentTask = task;
+			currentTask.AddTaskListener(this);
+			
+//			System.out.println("Started " + task.toString());
+			currentTask.start();
+		}
 	}
 	
 	/**
@@ -349,8 +414,82 @@ public class SelectionWindow implements ActionListener,
 	private void checkUpdates()
 	{
 		if (!isTaskRunning())
+		{
+			UpdateCheck checkTask = new UpdateCheck(UpdateCheck.VF_DEBUG);
+			checkTask.AddTaskListener(new TaskAdapter()
+			{
+				@Override
+				public void taskStart(BackgroundTask t) { }
+				
+				@Override
+				public void taskEnd(BackgroundTask t)
+				{
+					UpdateCheck check = (UpdateCheck) t;
+					
+					System.out.println("Latest version: " + check.getLatestVersion());
+					
+					System.out.println(Version.currentVersion.compareTo(check.getLatestVersion()));
+					boolean updateAvailable = check.isUpdateAvailable();
+					if (updateAvailable)
+					{
+						downloadUpdates();
+					}
+				}
+			});
+			startTask(checkTask);
+		}
+	}
+	
+	/**
+	 * Downloads the latest version from the server to LatestVersion.jar
+	 */
+	private void downloadUpdates()
+	{
+		System.out.println("Downloading update...");
+		
+		Downloader updateDownloader = new Downloader(
+				UpdateCheck.getLatestVersionURL(),
+				latestUpdateTemp);
+		updateDownloader.AddTaskListener(new TaskAdapter()
+		{
+			@Override
+			public void taskStart(BackgroundTask t) { System.out.println("Download start"); }
 			
-		startTask(new UpdateCheck());
+			@Override
+			public void taskEnd(BackgroundTask t)
+			{
+				int reply = JOptionPane.showConfirmDialog(null, 
+						"Updates have been downloaded and are ready to " +
+						"install.\nWould you like to install them now?\n" +
+						"(Clicking no will install them when MultiMC " +
+						"closes)", "Install Update?", 
+						JOptionPane.YES_NO_CANCEL_OPTION);
+				
+				if (reply == JOptionPane.YES_OPTION)
+					installUpdate(true);
+				else if (reply == JOptionPane.NO_OPTION)
+					installUpdate(false);
+			}
+		});
+		startTask(updateDownloader);
+	}
+	
+	/**
+	 * Closes the program and replaces the current jar with LatestVersion.jar
+	 * @param latestVersion the file that contains the latest version
+	 * @param doItNow if true, MultiMC will update now and restart when finished.
+	 * Otherwise, it will silently update when it closes
+	 */
+	private void installUpdate(boolean doItNow)
+	{
+		SelectionWindow.updateOnExit = true;
+		if (doItNow)
+		{
+			SelectionWindow.restartAfterUpdate = true;
+			mainFrame.dispatchEvent(new WindowEvent(mainFrame, WindowEvent.WINDOW_CLOSING));
+			System.exit(0);
+			//mainFrame.dispose();
+		}
 	}
 	
 	public boolean isTaskRunning()
@@ -461,6 +600,7 @@ public class SelectionWindow implements ActionListener,
 		else if (event.getSource() == btnHelp)
 		{
 			// TODO Help button
+			
 		}
 		
 		//							About
@@ -536,6 +676,45 @@ public class SelectionWindow implements ActionListener,
 		}
 	}
 	
+	@Override
+	public void taskProgressChange(BackgroundTask t, int p)
+	{
+		if (p > 0)
+			taskProgressBar.setValue(p);
+		else
+			taskProgressBar.setIndeterminate(true);
+	}
+
+	@Override
+	public void taskStart(BackgroundTask t)
+	{
+		lblTaskStatus.setVisible(isTaskRunning());
+		taskProgressBar.setVisible(isTaskRunning());
+		taskProgressBar.setIndeterminate(t.isProgressIndeterminate());
+		taskProgressBar.setStringPainted(!t.isProgressIndeterminate());
+	}
+
+	@Override
+	public void taskEnd(BackgroundTask t)
+	{
+		lblTaskStatus.setVisible(isTaskRunning());
+		taskProgressBar.setVisible(isTaskRunning());
+	}
+
+	@Override
+	public void taskStatusChange(BackgroundTask t, String status)
+	{
+		System.out.println("Status: " + status);
+		lblTaskStatus.setText(status);
+	}
+
+	@Override
+	public void taskErrorMessage(BackgroundTask t, String message)
+	{
+		JOptionPane.showMessageDialog(null, message, "Error", 
+				JOptionPane.ERROR_MESSAGE);
+	}
+
 	InstanceListModel instList;
 	private JButton btnNewInst;
 	private JButton btnViewFolder;
@@ -561,64 +740,4 @@ public class SelectionWindow implements ActionListener,
 	private JSeparator separator_2;
 	private JMenuItem mntmDeleteInstance;
 	private JMenuItem mntmLaunch;
-
-	@Override
-	public void taskProgressChange(BackgroundTask t, int p)
-	{
-		taskProgressBar.setValue(p);
-	}
-
-	@Override
-	public void taskStart(BackgroundTask t)
-	{
-		lblTaskStatus.setVisible(true);
-		taskProgressBar.setIndeterminate(t.isProgressIndeterminate());
-		taskProgressBar.setStringPainted(!t.isProgressIndeterminate());
-		taskProgressBar.setVisible(true);
-	}
-
-	@Override
-	public void taskEnd(BackgroundTask t)
-	{
-		lblTaskStatus.setVisible(false);
-		taskProgressBar.setVisible(false);
-		
-		if (t instanceof UpdateCheck)
-		{
-			boolean updateAvailable = ((UpdateCheck) t).isUpdateAvailable();
-			if (updateAvailable)
-			{
-				int result = JOptionPane.showConfirmDialog(null, "A new update " +
-						"is available. Would you like to download it?", "Update", 
-						JOptionPane.YES_NO_OPTION);
-				
-				if (result == JOptionPane.YES_OPTION && Desktop.isDesktopSupported())
-				{
-					try
-					{
-						Desktop.getDesktop().browse(new URI(updatePage));
-					} catch (IOException e)
-					{
-						e.printStackTrace();
-					} catch (URISyntaxException e)
-					{
-						e.printStackTrace();
-					}
-				}
-			}
-		}
-	}
-
-	@Override
-	public void taskStatusChange(BackgroundTask t, String status)
-	{
-		lblTaskStatus.setText(status);
-	}
-
-	@Override
-	public void taskErrorMessage(BackgroundTask t, String message)
-	{
-		JOptionPane.showMessageDialog(null, message, "Error", 
-				JOptionPane.ERROR_MESSAGE);
-	}
 }

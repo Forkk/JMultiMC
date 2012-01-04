@@ -30,6 +30,8 @@ public class Version
 	public int minor;
 	
 	public int revision;
+
+	public static final Version currentVersion = new Version(2, 0, 0);
 	
 	@Override
 	public String toString()
@@ -40,11 +42,11 @@ public class Version
 	public int compareTo(Version other)
 	{
 		if (major != other.major)
-			return (int) Math.copySign(1, major - other.major);
+			return (int) Math.copySign(1, other.major - major);
 		else if (minor != other.minor)
-			return (int) Math.copySign(1, minor - other.minor);
+			return (int) Math.copySign(1, other.minor - minor);
 		else if (revision != other.revision)
-			return (int) Math.copySign(1, revision - other.revision);
+			return (int) Math.copySign(1, other.revision - revision);
 		else
 			return 0;
 	}

@@ -42,6 +42,9 @@ public abstract class BackgroundTask extends Thread
 	{
 		public abstract void taskStart(BackgroundTask t);
 		public abstract void taskEnd(BackgroundTask t);
+		public abstract void taskProgressChange(BackgroundTask t, int p);
+		public abstract void taskStatusChange(BackgroundTask t, String status);
+		public abstract void taskErrorMessage(BackgroundTask t, String status);
 	}
 	private ArrayList<TaskListener> taskListeners = 
 			new ArrayList<BackgroundTask.TaskListener>();
@@ -58,55 +61,37 @@ public abstract class BackgroundTask extends Thread
 	protected void OnTaskEnd()
 	{
 		running = false;
-		for (TaskListener l : taskListeners)
+		for (TaskListener l : taskListeners.toArray(new TaskListener[0]))
 		{
 			l.taskEnd(this);
 		}
 	}
 	
-	public static interface ProgressChangeListener
-	{
-		public abstract void taskProgressChange(BackgroundTask t, int p);
-	}
-	private ArrayList<ProgressChangeListener> progressListeners = 
-			new ArrayList<BackgroundTask.ProgressChangeListener>();
-	public void AddProgressListener(ProgressChangeListener l) { progressListeners.add(l); }
-	public void RemoveProgressListener(ProgressChangeListener l) { progressListeners.remove(l); }
+	public void AddProgressListener(TaskListener l) { taskListeners.add(l); }
+	public void RemoveProgressListener(TaskListener l) { taskListeners.remove(l); }
 	protected void OnProgressChange(int p)
 	{
-		for (ProgressChangeListener l : progressListeners)
+		for (TaskListener l : taskListeners)
 		{
 			l.taskProgressChange(this, p);
 		}
 	}
 	
-	public static interface StatusChangeListener
-	{
-		public abstract void taskStatusChange(BackgroundTask t, String status);
-	}
-	private ArrayList<StatusChangeListener> statusListeners = 
-			new ArrayList<BackgroundTask.StatusChangeListener>();
-	public void AddStatusListener(StatusChangeListener l) { statusListeners.add(l); }
-	public void RemoveStatusListener(StatusChangeListener l) { statusListeners.remove(l); }
+	public void AddStatusListener(TaskListener l) { taskListeners.add(l); }
+	public void RemoveStatusListener(TaskListener l) { taskListeners.remove(l); }
 	protected void OnStatusChange(String newStatus)
 	{
-		for (StatusChangeListener l : statusListeners)
+		for (TaskListener l : taskListeners)
 		{
 			l.taskStatusChange(this, newStatus);
 		}
 	}
 	
-	public interface ErrorMessageListener
-	{
-		public abstract void taskErrorMessage(BackgroundTask t, String status);
-	}
-	private ArrayList<ErrorMessageListener> errorListeners = 
-			new ArrayList<BackgroundTask.ErrorMessageListener>();
-	public void AddErrorListener(ErrorMessageListener l) { errorListeners.add(l); }
-	public void RemoveErrorListener(ErrorMessageListener l) { errorListeners.remove(l); }
+	public void AddErrorListener(TaskListener l) { taskListeners.add(l); }
+	public void RemoveErrorListener(TaskListener l) { taskListeners.remove(l); }
 	protected void OnErrorMessage(String errorMessage)
 	{
-		for (ErrorMessageListener l : errorListeners)
+		for (TaskListener l : taskListeners)
 		{
 			l.taskErrorMessage(this, errorMessage);
 		}
