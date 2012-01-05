@@ -19,6 +19,8 @@ package forkk.multimc.gui;
 import java.awt.BorderLayout;
 import java.awt.Desktop;
 import java.awt.EventQueue;
+import java.awt.Point;
+import java.awt.dnd.DropTarget;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseAdapter;
@@ -54,6 +56,8 @@ import forkk.jsettings.IntSetting;
 import forkk.jsettings.SettingsFile;
 import forkk.jsettings.StringSetting;
 import forkk.jsettings.errors.SettingsLoadException;
+import forkk.multimc.data.FileDrop;
+import forkk.multimc.data.FileDrop.Listener;
 import forkk.multimc.data.Instance;
 import forkk.multimc.data.InstanceListModel;
 import forkk.multimc.data.Version;
@@ -263,6 +267,26 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		instListView.setModel(instList);
 		instListView.setCellRenderer(new InstListRenderer());
 		instListView.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
+		new FileDrop(instListView, new Listener()
+		{
+			@Override
+			public void filesDropped(File[] files, Point point)
+			{
+				Instance inst = instList.get(instListView.locationToIndex(point));
+				if (!inst.getInstMods().exists())
+					inst.getInstMods().mkdir();
+				for (File f : files)
+				{
+					try
+					{
+						forkk.multimc.data.FileUtils.RecursiveCopy(f, inst.getInstMods());
+					} catch (IOException e)
+					{
+						e.printStackTrace();
+					}
+				}
+			}
+		});
 //		instListView.addMouseListener(new MouseAdapter()
 //		{
 //		});
@@ -614,7 +638,9 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		//							Rename
 		else if (event.getSource() == mntmRename)
 		{
-			// TODO Rename
+			String newName = JOptionPane.showInputDialog(null, 
+					"Enter a new name:", "Rename", JOptionPane.PLAIN_MESSAGE);
+			instListView.getSelectedValue().setName(newName);
 		}
 		
 		//							Change icon
@@ -714,8 +740,9 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		JOptionPane.showMessageDialog(null, message, "Error", 
 				JOptionPane.ERROR_MESSAGE);
 	}
-
+	
 	InstanceListModel instList;
+	DropTarget instListDT;
 	private JButton btnNewInst;
 	private JButton btnViewFolder;
 	private JButton btnRefresh;

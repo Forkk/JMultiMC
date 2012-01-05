@@ -42,7 +42,6 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
-import forkk.multimc.compat.FileUtils;
 import forkk.multimc.compat.OSUtils;
 import forkk.multimc.data.exceptions.InstanceLoadException;
 import forkk.multimc.data.exceptions.InstanceSaveException;
@@ -262,7 +261,7 @@ public class Instance
 	 */
 	private void SymlinkLaunchEnd()
 	{
-		if (FileUtils.isSymlink(OSUtils.getMinecraftDir()))
+		if (Files.isSymbolicLink(OSUtils.getMinecraftDir().toPath()))
 		{
 			OSUtils.getMinecraftDir().delete();
 		}
