@@ -17,6 +17,7 @@
 package forkk.multimc.gui;
 
 import java.awt.Component;
+import java.awt.Dimension;
 
 import javax.swing.DefaultListCellRenderer;
 import javax.swing.JLabel;
@@ -26,13 +27,13 @@ import javax.swing.ListCellRenderer;
 import forkk.multimc.data.Instance;
 import forkk.multimc.instIcons.InstIconList;
 
-public class InstListRenderer implements ListCellRenderer<Instance>
+public class InstListRenderer implements ListCellRenderer
 {
 	protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
 	
 	@Override
-	public Component getListCellRendererComponent(JList<? extends Instance> list,
-			Instance value, int index, boolean isSelected, boolean cellHasFocus)
+	public Component getListCellRendererComponent(JList list,
+			Object value, int index, boolean isSelected, boolean cellHasFocus)
 	{
 		JLabel cell = (JLabel) defaultRenderer.getListCellRendererComponent(list,
 				value, index, isSelected, cellHasFocus);
@@ -40,8 +41,21 @@ public class InstListRenderer implements ListCellRenderer<Instance>
 		if (InstIconList.getList() == null)
 			System.out.println("null");
 		
-		cell.setText(value.getName());
-		cell.setIcon(InstIconList.getList().get(value.getIconKey()));
+		if (value instanceof Instance)
+		{
+			cell.setText(((Instance) value).getName());
+			cell.setIcon(InstIconList.getList().get(((Instance) value).getIconKey()));
+		}
+		else
+		{
+			cell.setText(value.toString());
+			cell.setIcon(InstIconList.getList().get(value.toString()));
+		}
+		
+		Dimension cellsize = cell.getSize();
+		cellsize.width += 40;
+		cellsize.height += 40;
+		cell.setMinimumSize(cellsize);
 		
 		cell.setHorizontalTextPosition(JLabel.CENTER);
 		cell.setVerticalTextPosition(JLabel.BOTTOM);

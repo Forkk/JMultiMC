@@ -29,12 +29,8 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.DirectoryStream;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
 import java.security.InvalidParameterException;
+import java.util.logging.Logger;
 
 import javax.swing.Box;
 import javax.swing.ImageIcon;
@@ -50,21 +46,19 @@ import javax.swing.JSeparator;
 import javax.swing.JToolBar;
 import javax.swing.ListSelectionModel;
 import javax.swing.UIManager;
+import javax.swing.UIManager.LookAndFeelInfo;
 
-import forkk.jsettings.BoolSetting;
-import forkk.jsettings.IntSetting;
-import forkk.jsettings.SettingsFile;
-import forkk.jsettings.StringSetting;
-import forkk.jsettings.errors.SettingsLoadException;
 import forkk.multimc.data.FileDrop;
 import forkk.multimc.data.FileDrop.Listener;
 import forkk.multimc.data.Instance;
 import forkk.multimc.data.InstanceListModel;
 import forkk.multimc.data.Version;
-import forkk.multimc.data.exceptions.InstanceLoadException;
+import forkk.multimc.data.exceptions.InstanceInitException;
 import forkk.multimc.data.exceptions.InstanceSaveException;
+import forkk.multimc.settings.AppSettings;
 import forkk.multimc.task.BackgroundTask;
 import forkk.multimc.task.Downloader;
+import forkk.multimc.task.JarBuilder;
 import forkk.multimc.task.TaskAdapter;
 import forkk.multimc.task.UpdateCheck;
 import forkk.multimc.update.UpdateFile;
@@ -72,9 +66,6 @@ import forkk.multimc.update.UpdateFile;
 public class SelectionWindow implements ActionListener, BackgroundTask.TaskListener
 {
 	private static String MainWindowTitle = "MultiMC";
-	
-	private static SettingsFile settings;
-	private static final String settingsFileName = "multimc.cfg";
 	
 	/**
 	 * The web page that is opened for manual updates.
@@ -95,9 +86,31 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 	 */
 	public static void main(String[] args)
 	{
-		try {
-			UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-		} catch (Throwable e) {
+		try
+		{
+			// A list of preferred L&Fs to use
+			final String[] themes = new String[] { "Nimbus" };
+			
+			boolean setNimbus = false;
+			for (String theme : themes)
+			{
+				for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels())
+				{
+					if (info.getName().equals(theme))
+					{
+						UIManager.setLookAndFeel(info.getClassName());
+						setNimbus = true;
+						break;
+					}
+				}
+			}
+			if (!setNimbus)
+			{
+				mainLog.warning("Could not find any theme to use, using system instead.");
+				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
+			}
+		} catch (Throwable e)
+		{
 			e.printStackTrace();
 		}
 		EventQueue.invokeLater(new Runnable()
@@ -116,6 +129,7 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 						@Override
 						public void windowClosing(WindowEvent ev)
 						{
+							AppSettings.saveSettings();
 							if (updateOnExit && latestUpdateTemp.exists())
 							{
 								System.out.println("Updating");
@@ -131,7 +145,6 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 											UpdateFile.getCurrentFilePath().toString(),
 											options);
 									System.out.println(UpdateFile.getCurrentFilePath().toString());
-									updateProcBuilder.inheritIO();
 									updateProcBuilder.start();
 									System.exit(0);
 								} catch (IOException e)
@@ -173,41 +186,13 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 	}
 	
 	/**
-	 * @return MultiMC's main settings file
+	 * The main logger for MultiMC
 	 */
-	public static SettingsFile getSettings()
-	{
-		try
-		{
-			if (settings == null)
-				return initSettings();
-			else
-				return settings;
-		} catch (SettingsLoadException e)
-		{
-			// TODO Handle this error properly ;)
-			e.printStackTrace();
-			return null;
-		}
-	}
+	public static final Logger mainLog = Logger.getLogger("forkk.MultiMC");
 	
-	private static SettingsFile initSettings() throws SettingsLoadException
+	public static String getMainLogName()
 	{
-		settings = new SettingsFile(new File(settingsFileName));
-		
-		// Instance launch settings
-		settings.addSetting(new StringSetting(settings, "LauncherFile", "launcher.jar"));
-		settings.addSetting(new IntSetting(settings, "InitialMemAlloc", 512));
-		settings.addSetting(new IntSetting(settings, "MaxMemAlloc", 1024));
-		
-		// Instance console settings
-		settings.addSetting(new BoolSetting(settings, "ShowConsole", false));
-		settings.addSetting(new BoolSetting(settings, "AutoCloseConsole", false));
-		
-		// Other settings
-		settings.addSetting(new BoolSetting(settings, "AutoCheckUpdates", true));
-		
-		return settings;
+		return mainLog.getName();
 	}
 	
 	/**
@@ -233,7 +218,7 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 			@Override
 			public void windowOpened(WindowEvent e)
 			{
-				if (((BoolSetting) getSettings().getSetting("AutoCheckUpdates")).get())
+				if (AppSettings.getAutoUpdate())
 				{
 					checkUpdates();
 				}
@@ -243,7 +228,7 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		mainFrame.setBounds(100, 100, 620, 400);
 		mainFrame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		
-		instListView = new JList<Instance>();
+		instListView = new JList();
 		instListView.addMouseListener(new MouseAdapter()
 		{
 			@Override
@@ -272,14 +257,19 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 			@Override
 			public void filesDropped(File[] files, Point point)
 			{
-				Instance inst = instList.get(instListView.locationToIndex(point));
+				Instance inst = (Instance) instList.get(instListView.locationToIndex(point));
 				if (!inst.getInstMods().exists())
 					inst.getInstMods().mkdir();
 				for (File f : files)
 				{
 					try
 					{
-						forkk.multimc.data.FileUtils.RecursiveCopy(f, inst.getInstMods());
+						forkk.multimc.util.FileUtils.recursiveCopy(f, 
+								inst.getInstMods(), true);
+						inst.recursiveSetInstallTime(
+								new File(inst.getInstMods(), f.getName()), 
+								System.currentTimeMillis());
+						rebuildJar(inst);
 					} catch (IOException e)
 					{
 						e.printStackTrace();
@@ -391,21 +381,23 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		statusBar.setFloatable(false);
 		mainFrame.getContentPane().add(statusBar, BorderLayout.SOUTH);
 		
+		lblTaskStatus = new JLabel("Task status...");
+		lblTaskStatus.setVisible(false);
+		statusBar.add(lblTaskStatus);
+		
+		statusBar.add(Box.createHorizontalGlue());
+		
 		taskProgressBar = new JProgressBar();
 		taskProgressBar.setVisible(false);
 		taskProgressBar.setStringPainted(true);
 		statusBar.add(taskProgressBar);
-		
-		lblTaskStatus = new JLabel("Task status...");
-		lblTaskStatus.setVisible(false);
-		statusBar.add(lblTaskStatus);
 		
 		mainFrame.setTitle(MainWindowTitle + " " + Version.currentVersion);
 		
 		loadInstances();
 	}
 	
-	private static final Path InstanceDirectory = FileSystems.getDefault().getPath("instances");
+	private static final File instanceDirectory = new File("instances");
 	
 	private BackgroundTask currentTask;
 	
@@ -512,6 +504,12 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		}
 	}
 	
+	private void rebuildJar(Instance inst)
+	{
+		JarBuilder jarBuild = new JarBuilder(inst);
+		startTask(jarBuild);
+	}
+	
 	public boolean isTaskRunning()
 	{
 		return (currentTask != null && currentTask.isRunning());
@@ -526,29 +524,29 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		{
 			instList.clear();
 			
-			if (!Files.exists(InstanceDirectory, LinkOption.NOFOLLOW_LINKS))
-				Files.createDirectory(InstanceDirectory);
+			if (!instanceDirectory.exists())
+				instanceDirectory.mkdir();
 			
-			DirectoryStream<Path> dirStream = Files.newDirectoryStream(InstanceDirectory);
-			for (Path p : dirStream)
+			for (File f : instanceDirectory.listFiles())
 			{
-				if (Files.exists(p.resolve(Instance.InstanceDataFileName), LinkOption.NOFOLLOW_LINKS))
+				if (new File(f, Instance.InstanceDataFileName).exists())
 				{
 					try
 					{
-						instList.addElement(new Instance(p.toString()));
-					} catch (InstanceLoadException e)
+						instList.addElement(new Instance(f.toString()));
+					} catch (InstanceInitException e)
 					{
 						e.printStackTrace();
-						System.out.println("Failed to load instance from " + p.toString());
+						System.out.println("Failed to load instance from " + f.toString());
 					}
 				}
 			}
-			dirStream.close();
-		} catch (IOException e)
-		{
-			e.printStackTrace();
 		}
+//		catch (IOException e)
+//		{
+//			e.printStackTrace();
+//		}
+		finally{}
 	}
 	
 	@Override
@@ -557,8 +555,9 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		//							Launch
 		if (event.getSource() == instListView || event.getSource() == mntmLaunch)
 		{
-			System.out.println("Launching " + instListView.getSelectedValue().getName());
-			instListView.getSelectedValue().Launch();
+			System.out.println("Launching " + 
+					((Instance) instListView.getSelectedValue()).getName());
+			((Instance) instListView.getSelectedValue()).Launch();
 		}
 		
 		
@@ -572,10 +571,11 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 			{
 				try
 				{
-					Path instPath = InstanceDirectory.resolve(instName.replaceAll("[^a-zA-Z0-9]", "_"));
+					File instPath = new File(instanceDirectory, 
+							instName.replaceAll("[^a-zA-Z0-9]", "_"));
 					Instance newInst = new Instance(instName, instPath.toString());
 					newInst.Save();
-				} catch (InstanceLoadException e1)
+				} catch (InstanceInitException e1)
 				{
 					e1.printStackTrace();
 				} catch (InstanceSaveException e1)
@@ -589,11 +589,12 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		//							View folder
 		else if (event.getSource() == btnViewFolder)
 		{
+			// FIXME View folder buttons don't work on Linux
 			if (Desktop.isDesktopSupported())
 			{
 				try
 				{
-					Desktop.getDesktop().open(InstanceDirectory.toFile());
+					Desktop.getDesktop().browse(instanceDirectory.toURI());
 				} catch (IOException e)
 				{
 					e.printStackTrace();
@@ -640,31 +641,36 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		{
 			String newName = JOptionPane.showInputDialog(null, 
 					"Enter a new name:", "Rename", JOptionPane.PLAIN_MESSAGE);
-			instListView.getSelectedValue().setName(newName);
+			((Instance) instListView.getSelectedValue()).setName(newName);
+			loadInstances();
 		}
 		
 		//							Change icon
 		else if (event.getSource() == mntmChangeIcon)
 		{
-			ChangeIconDialog chd = new ChangeIconDialog(instListView.getSelectedValue());
+			ChangeIconDialog chd = new ChangeIconDialog(
+					(Instance) instListView.getSelectedValue());
 			chd.setVisible(true);
 		}
 		
 		//							Notes
 		else if (event.getSource() == mntmNotes)
 		{
-			EditNotesDialog end = new EditNotesDialog(instListView.getSelectedValue());
+			EditNotesDialog end = new EditNotesDialog(
+					(Instance) instListView.getSelectedValue());
 			end.setVisible(true);
 		}
 		
 		//							View Folder
 		else if (event.getSource() == mntmViewFolder)
 		{
+			// FIXME View folder buttons don't work on Linux
 			if (Desktop.isDesktopSupported())
 			{
 				try
 				{
-					Desktop.getDesktop().open(instListView.getSelectedValue().getRootDir());
+					Desktop.getDesktop().browse((
+							(Instance) instListView.getSelectedValue()).getRootDir().toURI());
 				} catch (IOException e)
 				{
 					e.printStackTrace();
@@ -681,7 +687,7 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		//							Rebuild Jar
 		else if (event.getSource() == mntmRebuildMinecraftjar)
 		{
-			// TODO Rebuild Jar
+			rebuildJar((Instance) instListView.getSelectedValue());
 		}
 		
 		//							Delete
@@ -693,7 +699,7 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 			
 			if (reply != null && reply.equals("DELETE"))
 			{
-				Instance inst = instListView.getSelectedValue();
+				Instance inst = (Instance) instListView.getSelectedValue();
 				System.out.println("Deleting instance " + inst.getName());
 				instList.removeElement(inst);
 				inst.getRootDir().delete();
@@ -754,7 +760,7 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 	private JToolBar statusBar;
 	private JLabel lblTaskStatus;
 	private JProgressBar taskProgressBar;
-	private JList<Instance> instListView;
+	private JList instListView;
 	private JPopupMenu instPopupMenu;
 	private JMenuItem mntmRename;
 	private JSeparator separator;

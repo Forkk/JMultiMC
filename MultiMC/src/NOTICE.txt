@@ -2,6 +2,8 @@ Credits:
 MultiMC was originally created and written by Andrew Okin (Forkk13)
 Most of the code for MultiMC was written by Andrew Okin (Forkk13)
 
+The FileDrop class was written by Robert Harder. See FileDrop.java for more info.
+
 All menu bar icons are from the open icon library
 	http://openiconlibrary.sourceforge.net/
 	http://openiconlibrary.sourceforge.net/LICENSES.html

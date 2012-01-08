@@ -79,7 +79,7 @@ public class InstIconList
 		for (String key : DefIconKeys)
 		{
 			URL url = InstIconList.class.getResource(key + ".png");
-			System.out.println("Loading default icon: " + url + " to key " + key);
+//			System.out.println("Loading default icon: " + url + " to key " + key);
 			addIcon(key, new ImageIcon(url));
 		}
 	}
