@@ -19,7 +19,7 @@ public class UpdateCheck extends BackgroundTask
 	 * The debug version file ID. This always returns 999.999.999 and is used 
 	 * for testing the update system
 	 */
-	public static final int VF_DEBUG = 0;
+	public static final int VF_DEBUG = 1;
 	
 	/**
 	 * @param versionFileID the ID of the version file to get.

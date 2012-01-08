@@ -88,6 +88,9 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 	{
 		try
 		{
+			if (latestUpdateTemp.exists())
+				latestUpdateTemp.delete();
+			
 			// A list of preferred L&Fs to use
 			final String[] themes = new String[] { "Nimbus" };
 			
@@ -392,7 +395,7 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		taskProgressBar.setStringPainted(true);
 		statusBar.add(taskProgressBar);
 		
-		mainFrame.setTitle(MainWindowTitle + " " + Version.currentVersion);
+		mainFrame.setTitle(MainWindowTitle + " BETA " + Version.currentVersion);
 		
 		loadInstances();
 	}
@@ -433,9 +436,6 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 			UpdateCheck checkTask = new UpdateCheck(UpdateCheck.VF_STANDARD);
 			checkTask.AddTaskListener(new TaskAdapter()
 			{
-				@Override
-				public void taskStart(BackgroundTask t) { }
-				
 				@Override
 				public void taskEnd(BackgroundTask t)
 				{
@@ -481,6 +481,8 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 				
 				if (reply == JOptionPane.YES_OPTION)
 					installUpdate(true);
+				else
+					latestUpdateTemp.delete();
 			}
 		});
 		startTask(updateDownloader);
