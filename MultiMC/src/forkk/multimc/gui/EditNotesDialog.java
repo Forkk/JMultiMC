@@ -28,7 +28,6 @@ public class EditNotesDialog extends JDialog
 	 */
 	public EditNotesDialog(Instance inst)
 	{
-		setType(Type.POPUP);
 		this.instance = inst;
 		setModal(true);
 		setTitle("Edit Notes");

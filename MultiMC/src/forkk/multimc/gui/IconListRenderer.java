@@ -25,13 +25,13 @@ import javax.swing.ListCellRenderer;
 
 import forkk.multimc.instIcons.InstIconList;
 
-public class IconListRenderer implements ListCellRenderer<String>
+public class IconListRenderer implements ListCellRenderer
 {
 	protected DefaultListCellRenderer defaultRenderer = new DefaultListCellRenderer();
 	
 	@Override
-	public Component getListCellRendererComponent(JList<? extends String> list,
-			String value, int index, boolean isSelected, boolean cellHasFocus)
+	public Component getListCellRendererComponent(JList list,
+			Object value, int index, boolean isSelected, boolean cellHasFocus)
 	{
 		JLabel cell = (JLabel) defaultRenderer.getListCellRendererComponent(list,
 				value, index, isSelected, cellHasFocus);
@@ -39,8 +39,8 @@ public class IconListRenderer implements ListCellRenderer<String>
 		if (InstIconList.getList() == null)
 			System.out.println("null");
 		
-		cell.setText(value);
-		cell.setIcon(InstIconList.getList().get(value));
+		cell.setText(value.toString());
+		cell.setIcon(InstIconList.getList().get(value.toString()));
 		
 		cell.setHorizontalAlignment(JLabel.CENTER);
 		cell.setHorizontalTextPosition(JLabel.CENTER);

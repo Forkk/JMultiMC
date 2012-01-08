@@ -17,14 +17,11 @@ import javax.swing.JTabbedPane;
 import javax.swing.JTextField;
 import javax.swing.LayoutStyle.ComponentPlacement;
 import javax.swing.SpinnerNumberModel;
-import javax.swing.UIManager;
 import javax.swing.border.EmptyBorder;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 
-import forkk.jsettings.BoolSetting;
-import forkk.jsettings.IntSetting;
-import forkk.jsettings.StringSetting;
+import forkk.multimc.settings.AppSettings;
 
 public class SettingsDialog extends JDialog
 {
@@ -40,28 +37,28 @@ public class SettingsDialog extends JDialog
 	private JCheckBox chckbxAutoUpdate;
 	private JTextField launcherFileTextField;
 	
-	/**
-	 * Launch the application.
-	 */
-	public static void main(String[] args)
-	{
-		try
-		{
-			UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
-		} catch (Throwable e)
-		{
-			e.printStackTrace();
-		}
-		try
-		{
-			SettingsDialog dialog = new SettingsDialog();
-			dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
-			dialog.setVisible(true);
-		} catch (Exception e)
-		{
-			e.printStackTrace();
-		}
-	}
+//	/**
+//	 * Launch the application.
+//	 */
+//	public static void main(String[] args)
+//	{
+//		try
+//		{
+//			UIManager.setLookAndFeel("javax.swing.plaf.nimbus.NimbusLookAndFeel");
+//		} catch (Throwable e)
+//		{
+//			e.printStackTrace();
+//		}
+//		try
+//		{
+//			SettingsDialog dialog = new SettingsDialog();
+//			dialog.setDefaultCloseOperation(JDialog.DISPOSE_ON_CLOSE);
+//			dialog.setVisible(true);
+//		} catch (Exception e)
+//		{
+//			e.printStackTrace();
+//		}
+//	}
 	
 	/**
 	 * Create the dialog.
@@ -82,49 +79,49 @@ public class SettingsDialog extends JDialog
 				tabbedPane.setEnabledAt(0, true);
 				
 				JLabel lblLauncherFilename = new JLabel("Launcher Filename:");
-				launcherFileTextField = new JTextField(((StringSetting) SelectionWindow.getSettings().getSetting("LauncherFile")).get());
+				launcherFileTextField = new JTextField(AppSettings.getLauncherFilename());
 				launcherFileTextField.setColumns(10);
 				launcherFileTextField.addActionListener(new ActionListener()
 				{
 					@Override
 					public void actionPerformed(ActionEvent e)
 					{
-						((StringSetting) SelectionWindow.getSettings().getSetting("LauncherFile")).set(launcherFileTextField.getText());
+						AppSettings.setLauncherFilename(launcherFileTextField.getText());
 					}
 				});
 				
 				JLabel lblConsoleSettings = new JLabel("Console Settings:");
 				
 				chckbxShowConsole = new JCheckBox("Show console");
-				chckbxShowConsole.getModel().setSelected(((BoolSetting) SelectionWindow.getSettings().getSetting("ShowConsole")).get());
+				chckbxShowConsole.getModel().setSelected(AppSettings.getShowConsole());
 				chckbxShowConsole.getModel().addActionListener(new ActionListener()
 				{
 					@Override
 					public void actionPerformed(ActionEvent e)
 					{
-						((BoolSetting) SelectionWindow.getSettings().getSetting("ShowConsole")).set(chckbxShowConsole.getModel().isSelected());
+						AppSettings.setShowConsole(chckbxShowConsole.getModel().isSelected());
 					}
 				});
 				
 				chckbxAutoCloseConsole = new JCheckBox("Close console when instance exits.");
-				chckbxShowConsole.getModel().setSelected(((BoolSetting) SelectionWindow.getSettings().getSetting("AutoCloseConsole")).get());
+				chckbxAutoCloseConsole.getModel().setSelected(AppSettings.getAutoCloseConsole());
 				chckbxAutoCloseConsole.getModel().addActionListener(new ActionListener()
 				{
 					@Override
 					public void actionPerformed(ActionEvent e)
 					{
-						((BoolSetting) SelectionWindow.getSettings().getSetting("AutoCloseConsole")).set(chckbxAutoCloseConsole.getModel().isSelected());
+						AppSettings.setAutoCloseConsole(chckbxAutoCloseConsole.getModel().isSelected());
 					}
 				});
 				
 				chckbxAutoUpdate = new JCheckBox("Automatically check for updates when MultiMC starts");
-				chckbxShowConsole.getModel().setSelected(((BoolSetting) SelectionWindow.getSettings().getSetting("AutoCheckUpdates")).get());
+				chckbxAutoUpdate.getModel().setSelected(AppSettings.getAutoUpdate());
 				chckbxAutoUpdate.getModel().addActionListener(new ActionListener()
 				{
 					@Override
 					public void actionPerformed(ActionEvent e)
 					{
-						((BoolSetting) SelectionWindow.getSettings().getSetting("AutoCheckUpdates")).set(chckbxAutoUpdate.getModel().isSelected());
+						AppSettings.setCheckUpdates(chckbxAutoUpdate.getModel().isSelected());
 					}
 				});
 				
@@ -171,26 +168,30 @@ public class SettingsDialog extends JDialog
 				tabbedPane.addTab("Advanced", null, advancedTab, "Advanced settings such as memory allocations.");
 				
 				initialMemorySpinner = new JSpinner();
-				initialMemorySpinner.setModel(new SpinnerNumberModel(new Integer(512), new Integer(512), null, new Integer(512)));
+				initialMemorySpinner.setModel(new SpinnerNumberModel(
+						AppSettings.getInitialMemAlloc(),
+						new Integer(512), null, new Integer(512)));
 				initialMemorySpinner.getModel().addChangeListener(new ChangeListener()
 				{
 					@Override
 					public void stateChanged(ChangeEvent arg0)
 					{
-						((IntSetting) SelectionWindow.getSettings().getSetting("InitialMemAlloc")).set((Integer) initialMemorySpinner.getValue());
+						AppSettings.setInitialMemAlloc((Integer) initialMemorySpinner.getModel().getValue());
 					}
 				});
 				
 				JLabel lblInitialMemoryAllocation = new JLabel("Initial Memory Allocation (MB): ");
 				
 				maxMemorySpinner = new JSpinner();
-				maxMemorySpinner.setModel(new SpinnerNumberModel(new Integer(1024), new Integer(1024), null, new Integer(512)));
+				maxMemorySpinner.setModel(new SpinnerNumberModel(
+						AppSettings.getMaxMemAlloc(), 
+						new Integer(1024), null, new Integer(512)));
 				maxMemorySpinner.getModel().addChangeListener(new ChangeListener()
 				{
 					@Override
 					public void stateChanged(ChangeEvent e)
 					{
-						((IntSetting) SelectionWindow.getSettings().getSetting("MaxMemAlloc")).set((Integer) maxMemorySpinner.getValue());
+						AppSettings.setMaxMemAlloc((Integer) maxMemorySpinner.getModel().getValue());
 					}
 				});
 				
@@ -235,6 +236,7 @@ public class SettingsDialog extends JDialog
 				{
 					public void actionPerformed(ActionEvent e)
 					{
+						AppSettings.setLauncherFilename(launcherFileTextField.getText());
 						setVisible(false);
 					}
 				});

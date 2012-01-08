@@ -2,14 +2,13 @@ package forkk.multimc.update;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.FileSystemException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 
 import javax.swing.JOptionPane;
+
+import forkk.multimc.compat.OS;
+import forkk.multimc.compat.OSUtils;
+import forkk.multimc.util.FileUtils;
 
 public class UpdateFile
 {
@@ -24,8 +23,8 @@ public class UpdateFile
 	 */
 	public static void main(String[] args)
 	{
-		Path currentPath = null;
-		Path targetPath = null;
+		File currentPath = null;
+		File targetPath = null;
 		try
 		{
 			if (args.length < 1)
@@ -36,18 +35,17 @@ public class UpdateFile
 				return;
 			}
 			
-			targetPath = FileSystems.getDefault().getPath(args[0]);
-			currentPath = FileSystems.getDefault().getPath(getCurrentFilePath());
+			currentPath = new File(getCurrentFilePath());
+			targetPath = new File(args[0]);
 			long waitStart = System.currentTimeMillis();
 			while (true)
 			{
 				try
 				{
-					Files.copy(currentPath, targetPath, StandardCopyOption.REPLACE_EXISTING);
-				} catch (FileSystemException e)
+					FileUtils.copyFile(currentPath, targetPath, true);
+				} catch (IOException e)
 				{
-					if (e.getMessage().contains("being used") &&
-							e.getFile().equals(targetPath.toString()))
+					if (e.getMessage().contains("being used"))
 					{
 						if (System.currentTimeMillis() < waitStart + (3 * 1000))
 						{
@@ -112,6 +110,7 @@ public class UpdateFile
 	{
 		File path = new File(UpdateFile.class.getClass().
 				getResource("/forkk/multimc/update/UpdateFile.class").getPath());
-		return path.toString().substring(6, path.toString().lastIndexOf('!'));
+		return path.toString().substring((OSUtils.getCurrentOS() == OS.WINDOWS? 6 : 5), 
+				path.toString().lastIndexOf('!'));
 	}
 }

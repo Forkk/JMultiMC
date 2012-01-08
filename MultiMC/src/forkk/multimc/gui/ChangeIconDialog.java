@@ -24,8 +24,8 @@ public class ChangeIconDialog extends JDialog
 	private final JPanel contentPanel = new JPanel();
 	
 	Instance instance;
-	private JList<String> iconListView;
-	DefaultListModel<String> iconList;
+	private JList iconListView;
+	DefaultListModel iconList;
 	private JButton okButton;
 	
 	/**
@@ -40,7 +40,7 @@ public class ChangeIconDialog extends JDialog
 		getContentPane().add(contentPanel, BorderLayout.CENTER);
 		contentPanel.setLayout(new BorderLayout(0, 0));
 		{
-			iconListView = new JList<String>();
+			iconListView = new JList();
 			iconListView.addMouseListener(new MouseAdapter()
 			{
 				@Override
@@ -53,7 +53,7 @@ public class ChangeIconDialog extends JDialog
 			iconListView.setVisibleRowCount(0);
 			iconListView.setLayoutOrientation(JList.HORIZONTAL_WRAP);
 			iconListView.setCellRenderer(new IconListRenderer());
-			iconListView.setModel(iconList = new DefaultListModel<String>());
+			iconListView.setModel(iconList = new DefaultListModel());
 			contentPanel.add(iconListView);
 			
 			for (String key : InstIconList.getList().keySet())
@@ -71,7 +71,7 @@ public class ChangeIconDialog extends JDialog
 				{
 					public void actionPerformed(ActionEvent e)
 					{
-						instance.setIconKey(iconListView.getSelectedValue());
+						instance.setIconKey(iconListView.getSelectedValue().toString());
 						setVisible(false);
 					}
 				});

@@ -21,11 +21,11 @@ package forkk.multimc.data.exceptions;
  * An exception indicating that an instance failed to load.
  * @author Andrew Okin
  */
-public class InstanceLoadException extends InstanceException
+public class InstanceInitException extends InstanceException
 {
 	private static final long serialVersionUID = -2131128688535574734L;
 
-	public InstanceLoadException(String message)
+	public InstanceInitException(String message)
 	{
 		super(message, null);
 	}

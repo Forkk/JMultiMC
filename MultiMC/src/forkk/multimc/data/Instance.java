@@ -17,11 +17,11 @@
 package forkk.multimc.data;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
-import java.nio.file.Path;
+import java.util.Properties;
 import java.util.Scanner;
 
 import javax.xml.parsers.DocumentBuilder;
@@ -42,10 +42,11 @@ import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import org.xml.sax.SAXException;
 
+import forkk.multimc.compat.OS;
 import forkk.multimc.compat.OSUtils;
-import forkk.multimc.data.exceptions.InstanceLoadException;
+import forkk.multimc.data.exceptions.InstanceInitException;
 import forkk.multimc.data.exceptions.InstanceSaveException;
-import forkk.multimc.gui.SelectionWindow;
+import forkk.multimc.settings.AppSettings;
 
 public class Instance
 {
@@ -61,27 +62,35 @@ public class Instance
 	public static final String InstanceDataFileName = "instance.xml";
 	
 	// Methods
-	public Instance(String name, String rootDir) throws InstanceLoadException
+	public Instance(String name, String rootDir) throws InstanceInitException
 	{
 		Init(rootDir);
 		setName(name);
 	}
 	
-	public Instance(String rootDir) throws InstanceLoadException
+	public Instance(String rootDir) throws InstanceInitException
 	{
 		Init(rootDir);
 	}
 		
-	private void Init(String rootDir) throws InstanceLoadException
+	private void Init(String rootDir) throws InstanceInitException
 	{
+		this.rootDir = rootDir;
+		if (!new File(rootDir).exists())
+		{
+			new File(rootDir).mkdir();
+		}
+		if (!new File(rootDir).exists())
+		{
+			throw new InstanceInitException("Failed to " +
+					"initialize instance because it's root directory could " +
+					"not be created.");
+		}
+		
 		try
 		{
-			if (!Files.exists(FileSystems.getDefault().getPath(rootDir), LinkOption.NOFOLLOW_LINKS))
-			{
-				Files.createDirectory(FileSystems.getDefault().getPath(rootDir));
-			}
 			autosave = true;
-			this.rootDir = rootDir;
+			installTimes = loadInstallTimes();
 			docBuilder = DocumentBuilderFactory.newInstance().newDocumentBuilder();
 			
 			if (getInstDataFile().exists())
@@ -91,17 +100,17 @@ public class Instance
 		} catch (ParserConfigurationException e)
 		{
 			e.printStackTrace();
-			throw new InstanceLoadException("Failed to load the instance " +
+			throw new InstanceInitException("Failed to load the instance " +
 					"because the XML parser was misconfigured.");
 		} catch (SAXException e)
 		{
 			e.printStackTrace();
-			throw new InstanceLoadException("Failed to parse the instance's " +
+			throw new InstanceInitException("Failed to parse the instance's " +
 					"XML file. " + e.getMessage());
 		} catch (IOException e)
 		{
 			e.printStackTrace();
-			throw new InstanceLoadException("Unknown IO exception when " +
+			throw new InstanceInitException("Unknown IO exception when " +
 					"loading instance. " + e.getMessage());
 		}
 	}
@@ -134,46 +143,59 @@ public class Instance
 	 */
 	Process instProc;
 	
-	boolean symlinkLaunch;
+//	boolean symlinkLaunch;
 	
-	// Process stuff
 	public void Launch()
 	{
-		Launch(false);
-	}
-	
-	public void Launch(boolean symlinkLaunch)
-	{
-		this.symlinkLaunch = symlinkLaunch;
+//		this.symlinkLaunch = symlinkLaunch;
+		
+		String homeParam = this.getRootDir().getAbsolutePath();
+		homeParam = (homeParam.contains(" ")? "\"" + homeParam + "\"" : homeParam);
 		
 		ProcessBuilder mcProcBuild = new ProcessBuilder(
-				System.getProperty("java.home") + "/bin/java",
-				"-jar", 
-				"-Xms" + SelectionWindow.getSettings().getSetting("InitialMemAlloc").toString() + "m",
-				"-Xmx" + SelectionWindow.getSettings().getSetting("MaxMemAlloc").toString() + "m",
-				SelectionWindow.getSettings().getSetting("LauncherFile").toString());
+				new File(new File(System.getProperty("java.home"), "bin"), "java").toString(),
+				"-Duser.home=" + homeParam,
+				"-Xms" + AppSettings.getInitialMemAlloc() + "m",
+				"-Xmx" + AppSettings.getMaxMemAlloc() + "m",
+				"-cp", 
+				AppSettings.getLauncherFilename(),
+				"net.minecraft.LauncherFrame"
+				);
 		
-		switch (OSUtils.getCurrentOS())
+		String cmdString = "";
+		
+		for (String str : mcProcBuild.command())
 		{
-		case WINDOWS:
-			if (!symlinkLaunch)
-			{
-				mcProcBuild.environment().put("APPDATA", rootDir);
-				break;
-			}
-			
-		case MAC:
-		case LINUX:
-		default:
-			symlinkLaunch = true;
-			SymlinkLaunchPrep(mcProcBuild);
-			break;
+			cmdString += str + " ";
 		}
+		
+		System.out.println("Launching with command: " + cmdString);
+		
+		if (OSUtils.getCurrentOS() == OS.WINDOWS)
+		{
+			mcProcBuild.environment().put("APPDATA", rootDir);
+		}
+		
+//		switch (OSUtils.getCurrentOS())
+//		{
+//		case WINDOWS:
+//			if (!symlinkLaunch)
+//			{
+//				mcProcBuild.environment().put("APPDATA", rootDir);
+//				break;
+//			}
+//			
+//		case MAC:
+//		case LINUX:
+//		default:
+//			symlinkLaunch = true;
+//			SymlinkLaunchPrep(mcProcBuild);
+//			break;
+//		}
 		
 		try
 		{
 			//mcProcBuild.inheritIO();
-			System.out.println("Starting process...");
 			instProc = mcProcBuild.start();
 			
 			new Thread(new Runnable()
@@ -204,8 +226,8 @@ public class Instance
 	public void onProcExit()
 	{
 		System.out.println("Process quit.");
-		if (symlinkLaunch)
-			SymlinkLaunchEnd();
+//		if (symlinkLaunch)
+//			SymlinkLaunchEnd();
 	}
 	
 	public boolean isRunning()
@@ -225,9 +247,11 @@ public class Instance
 		return instProc;
 	}
 	
+/*
 	/**
 	 * Launches the instance using symbolic links
 	 */
+/*
 	private void SymlinkLaunchPrep(ProcessBuilder mcProcBuild)
 	{
 		File originalMC = OSUtils.getMinecraftDir();
@@ -236,7 +260,7 @@ public class Instance
 		System.out.println(String.format("Renaming %1$s to %2$s", originalMC, origMCTemp));
 		originalMC.renameTo(getAvailableMCTemp());
 		
-		Path link = OSUtils.getMinecraftDir().toPath();
+		File link = OSUtils.getMinecraftDir().toPath();
 		File linkTarget = getMCDir().getAbsoluteFile();
 		if (!linkTarget.exists())
 			linkTarget.mkdirs();
@@ -259,6 +283,7 @@ public class Instance
 	 * Cleans up after a symbolic link launch. Does nothing if origMCTemp is
 	 * null or doesn't exist.
 	 */
+/*
 	private void SymlinkLaunchEnd()
 	{
 		if (Files.isSymbolicLink(OSUtils.getMinecraftDir().toPath()))
@@ -275,6 +300,7 @@ public class Instance
 	 * @return An available temporary file for the original .minecraft folder
 	 * that is going to be replaced with a symbolic link.
 	 */
+/*
 	private File getAvailableMCTemp()
 	{
 		final String mcTNBase = ".tempMC";
@@ -289,6 +315,7 @@ public class Instance
 		}
 		return mcTemp;
 	}
+	*/
 	
 	// XML Stuff
 	private void AutoSave()
@@ -314,6 +341,8 @@ public class Instance
 	{
 		try
 		{
+			if (!getRootDir().exists())
+				getRootDir().mkdirs();
 			Transformer transformer = TransformerFactory.newInstance().newTransformer();
 			transformer.setOutputProperty(OutputKeys.INDENT, "yes");
 			
@@ -413,6 +442,83 @@ public class Instance
 		}
 	}
 	
+	// File install times
+	private static String installTimesFileName = "ModFileInstallTimes";
+	
+	Properties installTimes;
+	
+	private Properties loadInstallTimes()
+	{
+		Properties props = new Properties();
+		try
+		{
+			props.load(new FileInputStream(new File(getRootDir(), installTimesFileName)));
+		} catch (FileNotFoundException e)
+		{
+		} catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+		return props;
+	}
+	
+	private void saveInstallTimes()
+	{
+		try
+		{
+			installTimes.store(new FileOutputStream(
+					new File(getRootDir(), installTimesFileName)),
+					"DO NOT EDIT THIS FILE! It keeps track of when you " +
+					"installed each of your mods so that MultiMC knows " +
+					"which order to add them to minecraft.jar. Editing " +
+					"this file could cause problems.");
+		} catch (FileNotFoundException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+	
+	public Long getInstallTime(File file)
+	{
+		Object value = installTimes.get(file.getAbsolutePath());
+		if (value == null)
+			return file.lastModified();
+		try
+		{
+			return Long.parseLong(value.toString());
+		} catch (NumberFormatException e)
+		{
+			return file.lastModified();
+		}
+	}
+	
+	public void setInstallTime(File file, Long time)
+	{
+		file.setLastModified(time);
+		installTimes.put(file.getAbsolutePath(), time.toString());
+		saveInstallTimes();
+	}
+
+	public void recursiveSetInstallTime(File file, long time)
+	{
+		if (file.isDirectory())
+		{
+			for (File f : file.listFiles())
+			{
+				recursiveSetInstallTime(f, time);
+			}
+		}
+		else if (file.isFile())
+		{
+//			file.setLastModified(time);
+			setInstallTime(file, time);
+		}
+	}
 	
 	// XML Values
 	public String getName() { return getXmlNode("name").getTextContent(); }

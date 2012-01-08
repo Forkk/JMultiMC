@@ -18,7 +18,7 @@ package forkk.multimc.data;
 
 import javax.swing.DefaultListModel;
 
-public class InstanceListModel extends DefaultListModel<Instance>
+public class InstanceListModel extends DefaultListModel
 {
 	private static final long serialVersionUID = 5581712724966672263L;
 }
