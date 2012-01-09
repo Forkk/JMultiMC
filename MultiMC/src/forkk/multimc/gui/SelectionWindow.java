@@ -58,9 +58,9 @@ import forkk.multimc.data.Version;
 import forkk.multimc.data.exceptions.InstanceInitException;
 import forkk.multimc.data.exceptions.InstanceSaveException;
 import forkk.multimc.settings.AppSettings;
-import forkk.multimc.task.Task;
 import forkk.multimc.task.Downloader;
 import forkk.multimc.task.JarBuilder;
+import forkk.multimc.task.Task;
 import forkk.multimc.task.TaskAdapter;
 import forkk.multimc.task.UpdateCheck;
 import forkk.multimc.update.UpdateFile;
@@ -295,12 +295,12 @@ public class SelectionWindow implements ActionListener, Task.TaskListener
 						inst.recursiveSetInstallTime(
 								new File(inst.getInstMods(), f.getName()), 
 								System.currentTimeMillis());
-						rebuildJar(inst);
 					} catch (IOException e)
 					{
 						e.printStackTrace();
 					}
 				}
+				rebuildJar(inst);
 			}
 		});
 //		instListView.addMouseListener(new MouseAdapter()
