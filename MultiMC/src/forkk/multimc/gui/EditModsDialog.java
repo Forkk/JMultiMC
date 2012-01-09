@@ -95,6 +95,7 @@ public class EditModsDialog extends JDialog
 							{
 								File selFile = new File(
 										modFileList.getValueAt(i, 0).toString());
+								rebuild = true;
 								selFile.delete();
 							}
 						}
@@ -128,6 +129,7 @@ public class EditModsDialog extends JDialog
 
 	private void recursiveAddToList(File file)
 	{
+		if (!file.exists()) return;
 		if (file.isDirectory())
 		{
 			for (File f : file.listFiles())
@@ -139,5 +141,12 @@ public class EditModsDialog extends JDialog
 		{
 			modFileList.addRow(new Object[] { file, instance.getInstallTime(file), false });
 		}
+	}
+	
+	private boolean rebuild;
+	
+	public boolean shouldRebuild()
+	{
+		return rebuild;
 	}
 }

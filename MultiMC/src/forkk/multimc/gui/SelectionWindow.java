@@ -547,7 +547,10 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 	private void rebuildJar(Instance inst)
 	{
 		JarBuilder jarBuild = new JarBuilder(inst);
+		ForegroundTaskDialog buildDlg = new ForegroundTaskDialog(jarBuild);
+		buildDlg.setLocationRelativeTo(mainFrame);
 		startTask(jarBuild);
+		buildDlg.setVisible(true);
 	}
 	
 	public boolean isTaskRunning()

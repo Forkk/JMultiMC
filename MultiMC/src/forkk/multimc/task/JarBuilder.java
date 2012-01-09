@@ -25,6 +25,15 @@ public class JarBuilder extends BackgroundTask
 	
 	private static final String jarBackupName = "mcbackup.jar";
 	
+	final int maxSteps = 6;
+	int step = 0;
+	
+	private void setStep(int s)
+	{
+		step = s;
+		setProgress((int) (((float) step / (float) maxSteps) * 100));
+	}
+	
 	/*
 	 * Protocol:
 	 * 
@@ -55,16 +64,16 @@ public class JarBuilder extends BackgroundTask
 	public void TaskStart()
 	{
 		OnTaskStart();
+		
 		try
 		{
-		
-			buildLog.info("Creating mctmp...");
+			setStatus("Creating mctmp...");
 			File mctmp = new File(instance.getRootDir(), "mctmp");
 			if (mctmp.exists())
 				FileUtils.recursiveDelete(mctmp);
 			mctmp.mkdir();
 			
-			buildLog.info("Adding files to mctmp...");
+			setStatus("Adding files to mctmp...");
 			int pcount = 0;
 			for (File f : instance.getInstMods().listFiles())
 			{
@@ -73,19 +82,23 @@ public class JarBuilder extends BackgroundTask
 				setProgress(100 / pcount);
 			}
 			
+			setStep(1);
+			
 			// Backup minecraft.jar and delete it
 			File jarFile = new File(instance.getBinDir(), "minecraft.jar");
 			File jarBackup = new File(instance.getBinDir(), jarBackupName);
 			
 			if (!jarBackup.exists())
 			{
-				buildLog.info("Backing up minecraft.jar");
+				setStatus("Backing up minecraft.jar");
 				FileUtils.copyFile(jarFile, jarBackup, false);
 			}
 			jarFile.delete();
 			
+			setStep(2);
+			
 			// Extract the jar to mcjar and copy everything from mctmp to it.
-			buildLog.info("Extracting jar file");
+			setStatus("Extracting jar file");
 			File mcjar = new File(instance.getRootDir(), "mcjar");
 			if (mcjar.exists())
 				mcjar.delete();
@@ -98,20 +111,26 @@ public class JarBuilder extends BackgroundTask
 			if (metaInf.exists())
 				FileUtils.recursiveDelete(metaInf);
 			
+			setStep(3);
+			
 			// Copy mctmp to mcjar
-			buildLog.info("Adding mod files");
+			setStatus("Adding mod files");
 			for (File f : mctmp.listFiles())
 			{
 				FileUtils.recursiveCopy(f, mcjar, true);
 			}
 			FileUtils.recursiveDelete(mctmp);
 			
+			setStep(4);
+			
 			// Re-zip mcjar to minecraft.jar and delete it.
-			buildLog.info("Re-zipping jar");
-			
+			setStatus("Re-zipping jar");
 			ZipUtils.recursiveAddToZip(mcjar.listFiles(), jarFile, "");
+			setStep(5);
 			
+			setStatus("Removing temporary files...");
 			FileUtils.recursiveDelete(mcjar);
+			setStep(6);
 			
 			buildLog.info("Build complete");
 		} catch (IOException e)

@@ -26,6 +26,7 @@ public class ForegroundTaskDialog extends JDialog
 		setBounds(100, 100, 450, 40);
 		
 		progressBar = new JProgressBar();
+		progressBar.setStringPainted(true);
 		getContentPane().add(progressBar, BorderLayout.SOUTH);
 		
 		lblStatus = new JLabel("Status");
