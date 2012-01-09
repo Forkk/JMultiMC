@@ -18,7 +18,7 @@ package forkk.multimc.task;
 
 import java.util.ArrayList;
 
-public abstract class BackgroundTask extends Thread
+public abstract class Task extends Thread
 {
 	public void run()
 	{
@@ -40,14 +40,14 @@ public abstract class BackgroundTask extends Thread
 	// Events
 	public static interface TaskListener
 	{
-		public abstract void taskStart(BackgroundTask t);
-		public abstract void taskEnd(BackgroundTask t);
-		public abstract void taskProgressChange(BackgroundTask t, int p);
-		public abstract void taskStatusChange(BackgroundTask t, String status);
-		public abstract void taskErrorMessage(BackgroundTask t, String status);
+		public abstract void taskStart(Task t);
+		public abstract void taskEnd(Task t);
+		public abstract void taskProgressChange(Task t, int p);
+		public abstract void taskStatusChange(Task t, String status);
+		public abstract void taskErrorMessage(Task t, String status);
 	}
 	private ArrayList<TaskListener> taskListeners = 
-			new ArrayList<BackgroundTask.TaskListener>();
+			new ArrayList<Task.TaskListener>();
 	public void AddTaskListener(TaskListener l) { taskListeners.add(l); }
 	public void RemoveTaskListener(TaskListener l) { taskListeners.add(l); }
 	protected void OnTaskStart()

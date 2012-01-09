@@ -7,7 +7,7 @@ import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 
-public class Downloader extends BackgroundTask
+public class Downloader extends Task
 {
 	String description;
 	

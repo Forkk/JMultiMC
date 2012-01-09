@@ -58,14 +58,14 @@ import forkk.multimc.data.Version;
 import forkk.multimc.data.exceptions.InstanceInitException;
 import forkk.multimc.data.exceptions.InstanceSaveException;
 import forkk.multimc.settings.AppSettings;
-import forkk.multimc.task.BackgroundTask;
+import forkk.multimc.task.Task;
 import forkk.multimc.task.Downloader;
 import forkk.multimc.task.JarBuilder;
 import forkk.multimc.task.TaskAdapter;
 import forkk.multimc.task.UpdateCheck;
 import forkk.multimc.update.UpdateFile;
 
-public class SelectionWindow implements ActionListener, BackgroundTask.TaskListener
+public class SelectionWindow implements ActionListener, Task.TaskListener
 {
 	private static String MainWindowTitle = "MultiMC";
 	
@@ -425,9 +425,9 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 	
 	private static final File instanceDirectory = new File("instances");
 	
-	private BackgroundTask currentTask;
+	private Task currentTask;
 	
-	public void startTask(BackgroundTask task)
+	public void startTask(Task task)
 	{
 		if (isTaskRunning())
 			throw new InvalidParameterException("MultiMC can't multitask! " +
@@ -460,7 +460,7 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 			checkTask.AddTaskListener(new TaskAdapter()
 			{
 				@Override
-				public void taskEnd(BackgroundTask t)
+				public void taskEnd(Task t)
 				{
 					UpdateCheck check = (UpdateCheck) t;
 					
@@ -491,10 +491,10 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		updateDownloader.AddTaskListener(new TaskAdapter()
 		{
 			@Override
-			public void taskStart(BackgroundTask t) { System.out.println("Download start"); }
+			public void taskStart(Task t) { System.out.println("Download start"); }
 			
 			@Override
-			public void taskEnd(BackgroundTask t)
+			public void taskEnd(Task t)
 			{
 				int reply = JOptionPane.showConfirmDialog(null, 
 						"Updates have been downloaded and are ready to " +
@@ -756,7 +756,7 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 	}
 	
 	@Override
-	public void taskProgressChange(BackgroundTask t, int p)
+	public void taskProgressChange(Task t, int p)
 	{
 		if (p > 0)
 			taskProgressBar.setValue(p);
@@ -765,7 +765,7 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 	}
 
 	@Override
-	public void taskStart(BackgroundTask t)
+	public void taskStart(Task t)
 	{
 		lblTaskStatus.setVisible(isTaskRunning());
 		taskProgressBar.setVisible(isTaskRunning());
@@ -774,21 +774,21 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 	}
 
 	@Override
-	public void taskEnd(BackgroundTask t)
+	public void taskEnd(Task t)
 	{
 		lblTaskStatus.setVisible(isTaskRunning());
 		taskProgressBar.setVisible(isTaskRunning());
 	}
 
 	@Override
-	public void taskStatusChange(BackgroundTask t, String status)
+	public void taskStatusChange(Task t, String status)
 	{
 		System.out.println("Status: " + status);
 		lblTaskStatus.setText(status);
 	}
 
 	@Override
-	public void taskErrorMessage(BackgroundTask t, String message)
+	public void taskErrorMessage(Task t, String message)
 	{
 		JOptionPane.showMessageDialog(null, message, "Error", 
 				JOptionPane.ERROR_MESSAGE);

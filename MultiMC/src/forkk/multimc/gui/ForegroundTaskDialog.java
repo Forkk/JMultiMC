@@ -6,20 +6,20 @@ import javax.swing.JDialog;
 import javax.swing.JLabel;
 import javax.swing.JProgressBar;
 
-import forkk.multimc.task.BackgroundTask;
+import forkk.multimc.task.Task;
 
 public class ForegroundTaskDialog extends JDialog
 {
 	private static final long serialVersionUID = -8233885819803211100L;
 	
-	BackgroundTask bgTask;
+	Task bgTask;
 	private JProgressBar progressBar;
 	private JLabel lblStatus;
 	
 	/**
 	 * Create the frame.
 	 */
-	public ForegroundTaskDialog(BackgroundTask task)
+	public ForegroundTaskDialog(Task task)
 	{
 		setUndecorated(true);
 		setModalityType(ModalityType.APPLICATION_MODAL);
@@ -33,38 +33,38 @@ public class ForegroundTaskDialog extends JDialog
 		getContentPane().add(lblStatus, BorderLayout.NORTH);
 		
 		this.bgTask = task;
-		bgTask.AddTaskListener(new BackgroundTask.TaskListener()
+		bgTask.AddTaskListener(new Task.TaskListener()
 		{
 			
 			@Override
-			public void taskStatusChange(BackgroundTask t, String status)
+			public void taskStatusChange(Task t, String status)
 			{
 				setTitle(status);
 				lblStatus.setText(status);
 			}
 			
 			@Override
-			public void taskStart(BackgroundTask t)
+			public void taskStart(Task t)
 			{
 				setTitle(t.getStatus());
 				lblStatus.setText(t.getStatus());
 			}
 			
 			@Override
-			public void taskProgressChange(BackgroundTask t, int p)
+			public void taskProgressChange(Task t, int p)
 			{
 				progressBar.setValue(p);
 			}
 			
 			@Override
-			public void taskErrorMessage(BackgroundTask t, String status)
+			public void taskErrorMessage(Task t, String status)
 			{
 				// TODO Auto-generated method stub
 				
 			}
 			
 			@Override
-			public void taskEnd(BackgroundTask t)
+			public void taskEnd(Task t)
 			{
 				setVisible(false);
 				dispose();

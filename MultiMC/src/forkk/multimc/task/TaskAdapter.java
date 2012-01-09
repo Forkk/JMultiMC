@@ -1,37 +1,37 @@
 package forkk.multimc.task;
 
-public abstract class TaskAdapter implements BackgroundTask.TaskListener
+public abstract class TaskAdapter implements Task.TaskListener
 {
 	@Override
-	public void taskStart(BackgroundTask t)
+	public void taskStart(Task t)
 	{
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void taskEnd(BackgroundTask t)
+	public void taskEnd(Task t)
 	{
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void taskProgressChange(BackgroundTask t, int p)
+	public void taskProgressChange(Task t, int p)
 	{
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void taskStatusChange(BackgroundTask t, String status)
+	public void taskStatusChange(Task t, String status)
 	{
 		// TODO Auto-generated method stub
 		
 	}
 	
 	@Override
-	public void taskErrorMessage(BackgroundTask t, String status)
+	public void taskErrorMessage(Task t, String status)
 	{
 		// TODO Auto-generated method stub
 		

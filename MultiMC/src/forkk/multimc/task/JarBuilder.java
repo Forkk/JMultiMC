@@ -11,7 +11,7 @@ import forkk.multimc.gui.SelectionWindow;
 import forkk.multimc.util.FileUtils;
 import forkk.multimc.util.ZipUtils;
 
-public class JarBuilder extends BackgroundTask
+public class JarBuilder extends Task
 {
 	Instance instance;
 	

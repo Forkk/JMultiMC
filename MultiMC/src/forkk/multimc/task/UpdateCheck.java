@@ -8,7 +8,7 @@ import java.util.Scanner;
 
 import forkk.multimc.data.Version;
 
-public class UpdateCheck extends BackgroundTask
+public class UpdateCheck extends Task
 {
 	/**
 	 * The standard version file ID. This gets the latest version
