@@ -721,7 +721,11 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 		//							Edit Mods
 		else if (event.getSource() == mntmEditMods)
 		{
-			// TODO Edit Mods
+			Instance inst = (Instance) instListView.getSelectedValue();
+			EditModsDialog editDlg = new EditModsDialog(inst);
+			editDlg.setModal(true);
+			editDlg.setVisible(true);
+			rebuildJar(inst);
 		}
 		
 		//							Rebuild Jar

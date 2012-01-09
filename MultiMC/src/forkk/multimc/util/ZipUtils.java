@@ -104,7 +104,7 @@ public class ZipUtils
 				pathInZip = source.getName();
 			else
 				pathInZip = pathInZip + "/" + source.getName();
-			System.out.println("Recursing into " + source + " with path " + pathInZip);
+//			System.out.println("Recursing into " + source + " with path " + pathInZip);
 			// Recurse
 			for (File f : source.listFiles())
 			{
