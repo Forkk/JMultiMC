@@ -18,7 +18,7 @@ package forkk.multimc.data;
 
 public class Version
 {
-	public static final Version currentVersion = new Version(0, 1, 1);
+	public static final Version currentVersion = new Version(0, 1, 2);
 	
 	public Version(int major, int minor, int revision)
 	{

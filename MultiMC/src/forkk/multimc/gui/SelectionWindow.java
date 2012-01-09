@@ -29,6 +29,8 @@ import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.security.InvalidParameterException;
 import java.util.logging.Logger;
 
@@ -73,6 +75,21 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 	@SuppressWarnings("unused")
 	private static String updatePage = "http://www.tinyurl.com/multiplemc";
 	
+	public static URL getLauncherDownloadURL()
+	{
+		try
+		{
+			return new URL("https://s3.amazonaws.com/MinecraftDownload/launcher/minecraft.jar");
+		} catch (MalformedURLException e)
+		{
+			e.printStackTrace();
+			mainLog.fine("The launcher URL was reported invalid. Please report " +
+					"this bug.");
+			System.exit(0);
+			return null;
+		}
+	}
+	
 	private static boolean updateOnExit = false;
 	
 	private static boolean restartAfterUpdate = false;
@@ -94,7 +111,7 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 			// A list of preferred L&Fs to use
 			final String[] themes = new String[] { "Nimbus" };
 			
-			boolean setNimbus = false;
+			boolean setTheme = false;
 			for (String theme : themes)
 			{
 				for (LookAndFeelInfo info : UIManager.getInstalledLookAndFeels())
@@ -102,12 +119,12 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 					if (info.getName().equals(theme))
 					{
 						UIManager.setLookAndFeel(info.getClassName());
-						setNimbus = true;
+						setTheme = true;
 						break;
 					}
 				}
 			}
-			if (!setNimbus)
+			if (!setTheme)
 			{
 				mainLog.warning("Could not find any theme to use, using system instead.");
 				UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
@@ -221,6 +238,12 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 			@Override
 			public void windowOpened(WindowEvent e)
 			{
+				File launcherFile = new File(AppSettings.getLauncherFilename());
+				if (!launcherFile.exists())
+				{
+					downloadLauncher();
+				}
+				
 				if (AppSettings.getAutoUpdate())
 				{
 					checkUpdates();
@@ -504,6 +527,21 @@ public class SelectionWindow implements ActionListener, BackgroundTask.TaskListe
 			System.exit(0);
 			//mainFrame.dispose();
 		}
+	}
+	
+	private void downloadLauncher()
+	{
+		Downloader downloader = new Downloader(getLauncherDownloadURL(), 
+				new File(AppSettings.getLauncherFilename()), 
+				"Downloading Minecraft launcher...");
+		
+		ForegroundTaskDialog dlDialog = new ForegroundTaskDialog(downloader);
+		dlDialog.setLocationRelativeTo(mainFrame);
+		startTask(downloader);
+		
+		dlDialog.setVisible(true);
+		
+//		try { downloader.wait(); } catch (InterruptedException e) {}
 	}
 	
 	private void rebuildJar(Instance inst)
