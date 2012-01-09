@@ -17,7 +17,9 @@
 package forkk.multimc.gui;
 
 import java.awt.BorderLayout;
+import java.awt.Component;
 import java.awt.Desktop;
+import java.awt.Dimension;
 import java.awt.EventQueue;
 import java.awt.Point;
 import java.awt.dnd.DropTarget;
@@ -30,6 +32,8 @@ import java.awt.event.WindowEvent;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.security.InvalidParameterException;
 import java.util.logging.Logger;
@@ -97,6 +101,8 @@ public class SelectionWindow implements ActionListener, Task.TaskListener
 	private JFrame mainFrame;
 	
 	public static final File latestUpdateTemp = new File("LatestVersion.jar");
+	
+	public static final String reportBugURL = "https://github.com/Forkk/MultiMC/issues";
 	
 	/**
 	 * Launch the application.
@@ -391,6 +397,37 @@ public class SelectionWindow implements ActionListener, Task.TaskListener
 		
 		toolBar.add(Box.createHorizontalGlue());
 		
+		btnReportBug = new JButton("");
+		btnReportBug.addActionListener(new ActionListener()
+		{
+			public void actionPerformed(ActionEvent event)
+			{
+				if (Desktop.isDesktopSupported())
+				{
+					try
+					{
+						Desktop.getDesktop().browse(new URI(reportBugURL));
+					} catch (IOException e)
+					{
+						e.printStackTrace();
+						JOptionPane.showMessageDialog(null, "MultiMC failed to " +
+								"open the webpage because it couldn't find a " +
+								"program to open " + reportBugURL, "Error", 
+								JOptionPane.ERROR_MESSAGE);
+					} catch (URISyntaxException e)
+					{
+						e.printStackTrace();
+						JOptionPane.showMessageDialog(null, reportBugURL + 
+								" is an invalid URL. Please report this bug!", 
+								"Error", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			}
+		});
+		btnReportBug.setToolTipText("Report a Bug");
+		btnReportBug.setIcon(new ImageIcon(SelectionWindow.class.getResource("/forkk/multimc/icons/ReportBugIcon.png")));
+		toolBar.add(btnReportBug);
+		
 		btnHelp = new JButton("Help");
 		btnHelp.setEnabled(false);
 		btnHelp.setIcon(new ImageIcon(SelectionWindow.class.getResource("/forkk/multimc/icons/HelpIcon.png")));
@@ -414,7 +451,8 @@ public class SelectionWindow implements ActionListener, Task.TaskListener
 		statusBar.add(Box.createHorizontalGlue());
 		
 		taskProgressBar = new JProgressBar();
-		taskProgressBar.setVisible(false);
+		taskProgressBar.setAlignmentX(Component.RIGHT_ALIGNMENT);
+		taskProgressBar.setMinimumSize(new Dimension(100, 14));
 		taskProgressBar.setStringPainted(true);
 		statusBar.add(taskProgressBar);
 		
@@ -820,4 +858,5 @@ public class SelectionWindow implements ActionListener, Task.TaskListener
 	private JSeparator separator_2;
 	private JMenuItem mntmDeleteInstance;
 	private JMenuItem mntmLaunch;
+	private JButton btnReportBug;
 }

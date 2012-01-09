@@ -1,6 +1,7 @@
 package forkk.multimc.task;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.util.logging.Logger;
 import java.util.zip.ZipException;
@@ -133,7 +134,13 @@ public class JarBuilder extends Task
 			setStep(6);
 			
 			buildLog.info("Build complete");
-		} catch (IOException e)
+		} catch (FileNotFoundException e)
+		{
+			e.printStackTrace();
+			OnErrorMessage(e.getMessage());
+		}
+		
+		catch (IOException e)
 		{
 			// TODO Auto-generated catch block
 			e.printStackTrace();

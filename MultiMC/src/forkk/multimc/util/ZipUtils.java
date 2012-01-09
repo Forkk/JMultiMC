@@ -25,8 +25,14 @@ public class ZipUtils
 	public static void ExtractFromZip(ZipFile zf, ZipEntry entry, File dest)
 			throws IOException
 	{
-		if (!dest.getParentFile().exists())
-			dest.getParentFile().mkdirs();
+		if (entry.isDirectory())
+		{
+			dest.mkdirs();
+			return;
+		}
+		
+		//if (!dest.getParentFile().exists())
+		dest.getParentFile().mkdirs();
 		
 		if (!dest.exists())
 			dest.createNewFile();
