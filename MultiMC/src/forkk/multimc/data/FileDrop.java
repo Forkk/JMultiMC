@@ -7,8 +7,8 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.io.Reader;
-
-import forkk.multimc.data.FileDrop.TransferableObject;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * This class makes it easy to drag and drop files from the operating system to
@@ -327,9 +327,10 @@ public class FileDrop
 							log(out, "FileDrop: file list accepted.");
 							
 							// Get a useful list
-							java.util.List fileList = (java.util.List) tr
+							List<?> fileList = (java.util.List<?>) tr
 									.getTransferData(java.awt.datatransfer.DataFlavor.javaFileListFlavor);
-							java.util.Iterator iterator = fileList.iterator();
+							@SuppressWarnings("unused")
+							Iterator<?> iterator = fileList.iterator();
 							
 							// Convert list to array
 							java.io.File[] filesTemp = new java.io.File[fileList
@@ -466,7 +467,8 @@ public class FileDrop
 			boolean support = false;
 			try
 			{
-				Class arbitraryDndClass = Class
+				@SuppressWarnings("unused")
+				Class<?> arbitraryDndClass = Class
 						.forName("java.awt.dnd.DnDConstants");
 				support = true;
 			} // end try
@@ -487,7 +489,7 @@ public class FileDrop
 	{
 		try
 		{
-			java.util.List list = new java.util.ArrayList();
+			java.util.List<File> list = new java.util.ArrayList<File>();
 			java.lang.String line = null;
 			while ((line = bReader.readLine()) != null)
 			{
@@ -505,7 +507,7 @@ public class FileDrop
 				}
 			}
 			
-			return (java.io.File[]) list.toArray(new File[list.size()]);
+			return list.toArray(new File[list.size()]);
 		} catch (IOException ex)
 		{
 			log(out, "FileDrop: IOException");
@@ -716,6 +718,7 @@ public class FileDrop
 	 * @author rob@iharder.net
 	 * @version 1.2
 	 */
+	@SuppressWarnings("serial")
 	public static class Event extends java.util.EventObject
 	{
 		
@@ -877,7 +880,7 @@ public class FileDrop
 		 *            The {@link Fetcher} that will return the data object
 		 * @since 1.1
 		 */
-		public TransferableObject(Class dataClass, Fetcher fetcher)
+		public TransferableObject(Class<?> dataClass, Fetcher fetcher)
 		{
 			this.fetcher = fetcher;
 			this.customFlavor = new java.awt.datatransfer.DataFlavor(dataClass,
